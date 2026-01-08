@@ -1,0 +1,21 @@
+<svg width="1920" height="840" viewBox="0 0 1920 840" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+        <linearGradient x1="49.991%" y1="41.672%" x2="50%" y2="58.903%" id="la750putfa">
+            <stop stop-color="#FFF" offset="0%"/>
+            <stop stop-color="#F9F9F9" offset="14.079%"/>
+            <stop stop-color="#F9F9F9" offset="83.483%"/>
+            <stop stop-color="#FFF" offset="100%"/>
+        </linearGradient>
+        <linearGradient x1="50%" y1="-4.178%" x2="50%" y2="109.131%" id="2irg423jvb">
+            <stop stop-color="#FFF" offset="0%"/>
+            <stop stop-color="#F9F9F9" offset="14.079%"/>
+            <stop stop-color="#F9F9F9" offset="83.483%"/>
+            <stop stop-color="#FFF" offset="100%"/>
+            <stop stop-color="#FFF" offset="100%"/>
+        </linearGradient>
+    </defs>
+    <g fill="none" fill-rule="evenodd">
+        <path d="M0 56.5h1920v1H0zm0 121h1920v1H0zm0 121h1920v1H0zm0 121h1920v1H0zm0 121h1920v1H0zm0 121h1920v1H0zm0 121h1920v1H0z" fill="url(#la750putfa)"/>
+        <path d="M112.5 0h1v840h-1zm121 0h1v840h-1zm121 0h1v840h-1zm121 0h1v840h-1zm121 0h1v840h-1zm121 0h1v840h-1zm121 0h1v840h-1zm121 0h1v840h-1zm121 0h1v840h-1zm121 0h1v840h-1zm121 0h1v840h-1zm121 0h1v840h-1zm121 0h1v840h-1zm121 0h1v840h-1zm121 0h1v840h-1z" fill="url(#2irg423jvb)"/>
+    </g>
+</svg>

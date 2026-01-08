@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="104px" height="104px" viewBox="0 0 104 104" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+    <title>3D010777-EFD9-426F-A099-64169FFD92C5</title>
+    <g id="页面-1" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+        <g id="CareerMate-AI_Landing-page" transform="translate(-1576.000000, -3720.000000)">
+            <g id="编组-26" transform="translate(1576.000000, 3720.000000)">
+                <circle id="椭圆形" fill="#161616" cx="52" cy="52" r="52"></circle>
+                <circle id="椭圆形" cx="52" cy="52" r="44"></circle>
+                <text id="CareerMate-AI-·-Care" font-family="Inter-Regular_SemiBold, Inter" font-size="11" font-weight="500" letter-spacing="3.2" fill="#FFFFFF">
+                    <tspan x="8" y="55">CareerMate AI </tspan>
+                    <tspan x="132.193843" y="55" font-family="PingFangSC-Semibold, PingFang SC">· CareerMate AI ·</tspan>
+                </text>
+                <g id="编组" transform="translate(40.999914, 41.000000)" stroke="#FFFFFF" stroke-linecap="round" stroke-linejoin="round" stroke-width="3">
+                    <polyline id="路径" points="6.44385781 0 22.0001728 0 22.0001728 15.556315"></polyline>
+                    <line x1="0" y1="22" x2="21.9999136" y2="0" id="路径"></line>
+                </g>
+            </g>
+        </g>
+    </g>
+</svg>

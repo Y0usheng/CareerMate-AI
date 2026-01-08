@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="24px" height="24px" viewBox="0 0 24 24" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+    <title>82DA0C7D-2DCC-421B-BADC-3E0E8752E41E</title>
+    <g id="页面-1" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+        <g id="CareerMate-AI_Landing-page" transform="translate(-596.000000, -3638.000000)">
+            <g id="编组-59" transform="translate(248.000000, 3367.000000)">
+                <g id="编组-31" transform="translate(324.000000, 247.000000)">
+                    <g id="编组-30" transform="translate(24.000000, 24.000000)">
+                        <rect id="矩形" x="0" y="0" width="24" height="24"></rect>
+                        <g id="编组" transform="translate(4.000000, 2.000000)" stroke="#3266FF" stroke-width="2">
+                            <path d="M2,0 L10.5857864,0 C10.8510029,1.94968197e-15 11.1053568,0.10535684 11.2928932,0.292893219 L15.7071068,4.70710678 C15.8946432,4.89464316 16,5.14899707 16,5.41421356 L16,18 C16,19.1045695 15.1045695,20 14,20 L2,20 C0.8954305,20 1.3527075e-16,19.1045695 0,18 L0,2 C-1.3527075e-16,0.8954305 0.8954305,2.02906125e-16 2,0 Z" id="路径" stroke-linejoin="round"></path>
+                            <polygon id="路径" stroke-linecap="round" stroke-linejoin="round" points="5 7 11 7 11 10.99585 5.00415 11"></polygon>
+                            <line x1="5" y1="7" x2="5" y2="15" id="路径" stroke-linecap="round"></line>
+                        </g>
+                    </g>
+                </g>
+            </g>
+        </g>
+    </g>
+</svg>
