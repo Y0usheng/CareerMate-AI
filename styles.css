@@ -87,7 +87,9 @@ body {
     border-radius: 999px;
 }
 
-/* Hero Section Styles  */
+/* =========================================
+   Section 1: Hero Section
+   ========================================= */
 .hero-section {
     width: 100%;
     padding-top: 160px;
@@ -194,6 +196,9 @@ body {
     border-radius: 12px;
 }
 
+/* =========================================
+   Section 2: Problem Section
+   ========================================= */
 .problem-section {
     width: 100%;
     padding: 0 20px;
@@ -318,16 +323,9 @@ body {
     display: block;
 }
 
-.footer {
-    background-color: #333;
-    color: #fff;
-    text-align: center;
-    padding: 1rem 0;
-    position: fixed;
-    width: 100%;
-    bottom: 0;
-}
-
+/* =========================================
+   Section 3: Need Section
+   ========================================= */
 .need-section {
     width: 100%;
     padding: 50px 0;
@@ -406,6 +404,114 @@ body {
     margin: 0;
 }
 
+/* =========================================
+   Section 4: Action Section
+   ========================================= */
+.action-section {
+    width: 100%;
+    padding: 100px 0;
+    background-color: #fff;
+    display: flex;
+    justify-content: center;
+}
+
+.action-container {
+    width: 100%;
+    max-width: 1440px;
+    padding: 0 20px;
+    box-sizing: border-box;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 60px;
+}
+
+.action-left {
+    flex: 1;
+    max-width: 600px;
+}
+
+.action-title {
+    font-size: 32px;
+    font-weight: 700;
+    color: #111;
+    margin-bottom: 40px;
+    text-align: left;
+}
+
+.flow-img {
+    width: 100%;
+    max-width: 600px;
+    height: auto;
+    display: block;
+}
+
+.action-right {
+    flex: 1.2;
+    display: flex;
+    justify-content: flex-end;
+}
+
+.chat-ui-image-wrapper img {
+    width: 100%;
+    max-width: 800px;
+    height: auto;
+    display: block;
+    border-radius: 12px;
+}
+
+/* =========================================
+   Section 5: Tech Section
+   ========================================= */
+.tech-section {
+    width: 100%;
+    padding: 80px 0 100px 0;
+    background-color: #fff;
+    display: flex;
+    justify-content: center;
+}
+
+.tech-container {
+    width: 100%;
+    max-width: 1327px;
+    padding: 0 20px;
+    box-sizing: border-box;
+    text-align: center;
+}
+
+.tech-icons-wrapper {
+    margin-bottom: -120px;
+}
+
+.tech-icons-wrapper img {
+    width: 100%;
+    height: auto;
+    display: inline-block;
+}
+
+.tech-text h3 {
+    font-size: 24px;
+    font-weight: 700;
+    margin-bottom: 16px;
+    color: #111;
+}
+
+.tech-text p {
+    font-size: 16px;
+    color: #666;
+    line-height: 1.6;
+}
+
+.footer {
+    background-color: #333;
+    color: #fff;
+    text-align: center;
+    padding: 1rem 0;
+    position: fixed;
+    width: 100%;
+    bottom: 0;
+}
+
 @media (max-width: 768px) {
     .main-nav {
         display: none;
@@ -458,5 +564,32 @@ body {
 
     .need-card {
         padding: 24px;
+    }
+
+    .action-container {
+        flex-direction: column;
+        gap: 40px;
+        text-align: center;
+    }
+
+    .action-left {
+        max-width: 100%;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .section-title {
+        text-align: center;
+        font-size: 28px;
+    }
+
+    .action-right {
+        width: 100%;
+        justify-content: center;
+    }
+
+    .tech-icons-wrapper img {
+        max-width: 100%;
     }
 }
