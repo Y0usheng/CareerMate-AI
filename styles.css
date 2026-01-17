@@ -502,16 +502,6 @@ body {
     line-height: 1.6;
 }
 
-.footer {
-    background-color: #333;
-    color: #fff;
-    text-align: center;
-    padding: 1rem 0;
-    position: fixed;
-    width: 100%;
-    bottom: 0;
-}
-
 /* =========================================
    Section 6: Trusted by Students
    ========================================= */
@@ -807,6 +797,62 @@ body {
     transform: translateY(-2px);
 }
 
+/* =========================================
+   Footer Section
+   ========================================= */
+.footer {
+    background-color: #F8F9FB;
+    margin-top: -140px;
+    padding: 100px 0 40px 0;
+    width: 100%;
+    border-top: 1px solid #e0e0e0;
+}
+
+.footer-container {
+    width: 100%;
+    padding: 0 40px;
+    box-sizing: border-box;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+}
+
+.footer-left {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.footer-logo {
+    display: inline-block;
+    text-decoration: none;
+    color: #111;
+}
+
+.copyright {
+    font-size: 14px;
+    color: #888;
+    margin: 0;
+}
+
+.footer-links {
+    display: flex;
+    gap: 32px;
+}
+
+.footer-links a {
+    text-decoration: none;
+    color: #333;
+    font-size: 14px;
+    font-weight: 500;
+    transition: color 0.2s;
+}
+
+.footer-links a:hover {
+    color: #000;
+    text-decoration: underline;
+}
+
 @media (max-width: 768px) {
     .main-nav {
         display: none;
@@ -930,5 +976,22 @@ body {
 
     .cta-card p {
         font-size: 16px;
+    }
+
+    .footer {
+        padding: 40px 0;
+        margin-top: -80px;
+    }
+
+    .footer-container {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 30px;
+        padding: 0 20px;
+    }
+
+    .footer-links {
+        flex-direction: column;
+        gap: 16px;
     }
 }
