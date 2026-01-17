@@ -924,6 +924,75 @@ body {
     color: white;
 }
 
+/* =========================================
+   Toast Notification Styles
+   ========================================= */
+#toast-container {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 1000;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.toast {
+    min-width: 250px;
+    padding: 16px 20px;
+    border-radius: 8px;
+    background-color: #fff;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 14px;
+    font-weight: 500;
+    animation: slideIn 0.3s ease-out forwards;
+    opacity: 0;
+    transform: translateX(100%);
+    border-left: 5px solid #ccc;
+}
+
+.toast.success {
+    border-left-color: #27C93F;
+}
+
+.toast.success .toast-icon {
+    color: #27C93F;
+}
+
+.toast.error {
+    border-left-color: #ff4d4f;
+}
+
+.toast.error .toast-icon {
+    color: #ff4d4f;
+}
+
+.toast.hide {
+    animation: slideOut 0.3s ease-in forwards;
+}
+
+@keyframes slideIn {
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+@keyframes slideOut {
+    from {
+        opacity: 1;
+        transform: translateX(0);
+    }
+
+    to {
+        opacity: 0;
+        transform: translateX(100%);
+    }
+}
+
 @media (max-width: 768px) {
     .main-nav {
         display: none;

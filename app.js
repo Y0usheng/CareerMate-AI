@@ -31,87 +31,87 @@ document.addEventListener('DOMContentLoaded', function () {
         const MIN_MESSAGE_LENGTH = 20;
         const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
+        const showToast = (message, type = 'success') => {
+            const container = document.getElementById('toast-container');
+
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+
+            const iconSymbol = type === 'success' ? '✓' : '✕';
+
+            toast.innerHTML = `
+                <span class="toast-icon" style="font-weight:bold; font-size:18px;">${iconSymbol}</span>
+                <span>${message}</span>
+            `;
+
+            container.appendChild(toast);
+
+            setTimeout(() => {
+                toast.classList.add('hide');
+                toast.addEventListener('animationend', () => {
+                    toast.remove();
+                });
+            }, 3000);
+        };
+
+        const simulateAPI = (formData) => {
+            return new Promise((resolve, reject) => {
+                setTimeout(() => {
+                    const isSuccess = Math.random() > 0.3;
+
+                    if (isSuccess) {
+                        resolve({ status: 200, message: 'Message sent successfully!' });
+                    } else {
+                        reject({ status: 500, message: 'Server error. Please try again.' });
+                    }
+                }, 1500);
+            });
+        };
 
         const showError = (input, message) => {
             const formGroup = input.parentElement;
             clearError(input);
-
             formGroup.classList.add('error');
             const errorDiv = document.createElement('small');
             errorDiv.className = 'error-message';
             errorDiv.innerText = message;
             formGroup.appendChild(errorDiv);
         };
-
         const clearError = (input) => {
             const formGroup = input.parentElement;
             formGroup.classList.remove('error');
             const errorDisplay = formGroup.querySelector('.error-message');
-            if (errorDisplay) {
-                errorDisplay.remove();
-            }
+            if (errorDisplay) errorDisplay.remove();
         };
 
         const checkInput = (input) => {
             const value = input.value.trim();
             const id = input.id;
             let isValid = true;
-
             if (id === 'fullname') {
-                if (value === '') {
-                    showError(input, 'Full Name is required.');
-                    isValid = false;
-                } else {
-                    clearError(input);
-                }
+                if (value === '') { showError(input, 'Full Name is required.'); isValid = false; }
+                else { clearError(input); }
+            } else if (id === 'email') {
+                if (value === '') { showError(input, 'Email is required.'); isValid = false; }
+                else if (!EMAIL_REGEX.test(value)) { showError(input, 'Invalid email format.'); isValid = false; }
+                else { clearError(input); }
+            } else if (id === 'message') {
+                if (value === '') { showError(input, 'Message is required.'); isValid = false; }
+                else if (value.length < MIN_MESSAGE_LENGTH) { showError(input, `Minimum ${MIN_MESSAGE_LENGTH} characters required.`); isValid = false; }
+                else { clearError(input); }
             }
-
-            else if (id === 'email') {
-                if (value === '') {
-                    showError(input, 'Email address is required.');
-                    isValid = false;
-                } else if (!EMAIL_REGEX.test(value)) {
-                    showError(input, 'Please enter a valid email (e.g., user@example.com).');
-                    isValid = false;
-                } else {
-                    clearError(input);
-                }
-            }
-
-            else if (id === 'message') {
-                if (value === '') {
-                    showError(input, 'Message cannot be empty.');
-                    isValid = false;
-                } else if (value.length < MIN_MESSAGE_LENGTH) {
-                    showError(input, `Message must be at least ${MIN_MESSAGE_LENGTH} characters. (Current: ${value.length})`);
-                    isValid = false;
-                } else {
-                    clearError(input);
-                }
-            }
-
             return isValid;
         };
 
-
         [nameInput, emailInput, messageInput].forEach(input => {
-            input.addEventListener('blur', () => {
-                checkInput(input);
-            });
-        });
-
-        [nameInput, emailInput, messageInput].forEach(input => {
+            input.addEventListener('blur', () => checkInput(input));
             input.addEventListener('input', () => {
-                const formGroup = input.parentElement;
-                if (formGroup.classList.contains('error')) {
-                    clearError(input);
-                }
+                if (input.parentElement.classList.contains('error')) clearError(input);
             });
         });
 
-        contactForm.addEventListener('submit', function (e) {
+        contactForm.addEventListener('submit', async function (e) {
             e.preventDefault();
-
             const isNameValid = checkInput(nameInput);
             const isEmailValid = checkInput(emailInput);
             const isMessageValid = checkInput(messageInput);
@@ -123,18 +123,33 @@ document.addEventListener('DOMContentLoaded', function () {
                 submitBtn.classList.add('loading');
                 submitBtn.innerHTML = 'Sending...';
 
-                setTimeout(() => {
-                    submitBtn.classList.remove('loading');
-                    submitBtn.classList.add('success');
-                    submitBtn.innerHTML = 'Message Sent! ✓';
+                try {
+                    const response = await simulateAPI({
+                        name: nameInput.value,
+                        email: emailInput.value,
+                        message: messageInput.value
+                    });
+
+                    showToast(response.message, 'success');
                     contactForm.reset();
 
+                    submitBtn.classList.remove('loading');
+                    submitBtn.classList.add('success');
+                    submitBtn.innerHTML = 'Sent! ✓';
+
+                } catch (error) {
+                    console.error(error);
+                    showToast(error.message, 'error');
+
+                    submitBtn.classList.remove('loading');
+                    submitBtn.innerHTML = 'Retry';
+                } finally {
                     setTimeout(() => {
                         submitBtn.disabled = false;
-                        submitBtn.classList.remove('success');
+                        submitBtn.classList.remove('success', 'loading');
                         submitBtn.innerHTML = originalBtnText;
                     }, 3000);
-                }, 2000);
+                }
             }
         });
     }
