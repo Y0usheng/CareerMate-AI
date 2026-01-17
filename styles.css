@@ -907,6 +907,7 @@ body {
     margin-top: 6px;
     display: block;
     text-align: left;
+    font-weight: 500;
 }
 
 .submit-btn-black:disabled,
