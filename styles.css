@@ -890,6 +890,39 @@ body {
     transform: translateY(0);
 }
 
+/* =========================================
+   Form Validation & Interaction States
+   ========================================= */
+
+.form-group.error input,
+.form-group.error select,
+.form-group.error textarea {
+    border-color: #ff4d4f;
+    background-color: #fff1f0;
+}
+
+.error-message {
+    color: #ff4d4f;
+    font-size: 13px;
+    margin-top: 6px;
+    display: block;
+    text-align: left;
+}
+
+.submit-btn-black:disabled,
+.submit-btn-black.loading {
+    background-color: #ccc;
+    cursor: not-allowed;
+    transform: none;
+    opacity: 0.8;
+}
+
+.submit-btn-black.success {
+    background-color: #27C93F;
+    border-color: #27C93F;
+    color: white;
+}
+
 @media (max-width: 768px) {
     .main-nav {
         display: none;
