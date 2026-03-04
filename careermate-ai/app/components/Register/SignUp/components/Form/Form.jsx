@@ -3,7 +3,7 @@ import Input from "./components/Input";
 import LoginLink from "./components/LoginLink";
 
 const Form = () => (
-    <form className="signup-form">
+    <form className="flex-1">
         <Input />
         <Input />
         <Input />

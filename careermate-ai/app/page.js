@@ -1,5 +1,5 @@
-import Header from "@/components/Header";
-import SignUp from "@/components/SignUp";
+import Header from "./components/Register/Header";
+import SignUp from "./components/Register/SignUp";
 
 export default function Home() {
     return (

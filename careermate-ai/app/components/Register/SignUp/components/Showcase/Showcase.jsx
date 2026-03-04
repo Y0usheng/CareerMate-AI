@@ -1,6 +1,11 @@
-const Showcase = () => <div className="showcase">
-    <h1>Welcome to CareerMate AI</h1>
-    <p>Your personalized career companion powered by AI.</p>
-</div>;
+import UserReviews from "./components/UserReviews";
+import Advantages from "./components/Advantages";
+
+const Showcase = () =>
+    <div className="flex-1">
+        <p className="showcase-title">Showcase</p>
+        <UserReviews />
+        <Advantages />
+    </div>;
 
 export default Showcase;

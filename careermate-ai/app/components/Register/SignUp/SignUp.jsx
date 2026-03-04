@@ -1,9 +1,8 @@
-import Form from "./Form"
-import Showcase from "./Showcase";
+import Form from "./components/Form"
+import Showcase from "./components/Showcase";
 
 const SignUp = () => (
-    <div>
-        <h1>Sign Up</h1>
+    <div className="flex">
         <Form />
         <Showcase />
     </div>

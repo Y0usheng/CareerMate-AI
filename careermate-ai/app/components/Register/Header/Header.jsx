@@ -1,6 +1,9 @@
+import Image from 'next/image';
+import logo from './assets/logo.png';
+
 const Header = () => (
-    <header className="register-header">
-        <h1>Register</h1>
+    <header className="register-header fixed p-8">
+        <Image src={logo} alt="CareerMate-AI" width={184} height={24} />
     </header>
 )
 
