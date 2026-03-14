@@ -13,15 +13,15 @@ const Form = () => (
             </p>
         </div>
 
-        <div className="space-y-6">
-            <Field label="Full Name" placeholder="Enter your full name" />
-            <Field label="Email" placeholder="Enter your email" />
-            <Field label="Password" placeholder="Enter your password" />
+        <div className="space-y-4">
+            <Field label="Full Name" placeholder="Enter your full name" type="text" />
+            <Field label="Email" placeholder="Enter your email" type="email" />
+            <Field label="Password" placeholder="Enter your password" type="password" />
         </div>
-
-        <Button />
-        <LoginLink />
-
+        <div className="mt-10 space-y-6">
+            <Button>Create Account</Button>
+            <LoginLink />
+        </div>
     </form>
 )
 
