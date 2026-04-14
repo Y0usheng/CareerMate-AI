@@ -1,3 +1,5 @@
+import backgroundImage from "./assets/background.png";
+
 const coachAvatars = [
     { label: "A", className: "bg-[linear-gradient(145deg,#0f172a,#334155)]" },
     { label: "B", className: "bg-[linear-gradient(145deg,#2563eb,#38bdf8)]" },
@@ -8,7 +10,10 @@ const coachAvatars = [
 const engineeringIcons = ["GPT", "</>", "AWS", "UX"];
 
 const AuthShowcase = () => (
-    <section className="relative min-h-[420px] overflow-visible rounded-[2rem] border border-white/60 bg-[linear-gradient(145deg,#e8f5ff_0%,#8fd0ff_42%,#1f75ff_100%)] p-5 shadow-[0_30px_90px_rgba(59,130,246,0.22)] sm:min-h-[520px] lg:min-h-[640px] lg:p-6">
+    <section
+        className="relative min-h-[420px] overflow-visible rounded-[2rem] border border-white/60 p-5 shadow-[0_30px_90px_rgba(59,130,246,0.22)] sm:min-h-[520px] lg:min-h-[640px] lg:p-6"
+        style={{ backgroundImage: `url(${backgroundImage.src})`, backgroundSize: "cover", backgroundPosition: "center" }}
+    >
         <div className="absolute inset-0 overflow-hidden rounded-[2rem]">
             <div className="absolute inset-x-10 top-0 h-44 rounded-b-[50%] bg-white/55 blur-2xl" />
             <div className="absolute -right-16 top-8 h-[36rem] w-[36rem] rounded-full border-[44px] border-white/85 opacity-90" />

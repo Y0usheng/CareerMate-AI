@@ -1,36 +1,147 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# CareerMate AI — Frontend
 
-## Getting Started
+Next.js frontend for CareerMate AI — an AI-powered career coaching platform for resume review, mock interviews, and career guidance.
 
-First, run the development server:
+## Tech Stack
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+| Layer | Technology |
+|---|---|
+| Framework | Next.js 16 (App Router) |
+| UI Library | React 19 |
+| Styling | Tailwind CSS v4 |
+| Language | JavaScript (JSX) |
+
+## Project Structure
+
+```
+frontend/
+├── app/
+│   ├── page.js                    # / Landing page
+│   ├── login/page.js              # /login
+│   ├── register/page.js           # /register
+│   ├── forgot-password/page.js    # /forgot-password
+│   ├── dashboard/page.js          # /dashboard
+│   ├── onboarding/page.js         # /onboarding
+│   ├── settings/page.js           # /settings
+│   ├── layout.js                  # Root layout
+│   └── components/
+│       ├── Auth/                  # Shared login & register UI
+│       │   ├── Page/              # AuthPage (mode="login"|"register")
+│       │   ├── components/
+│       │   │   ├── AuthField/     # Input field with validation
+│       │   │   ├── AuthForm/      # Login / Register form logic
+│       │   │   ├── AuthHeader/    # Logo + title
+│       │   │   └── AuthShowcase/  # Right-panel decorative showcase
+│       │   │       └── assets/    # background.png
+│       │   └── data.js            # Form field definitions
+│       ├── Dashboard/             # Main dashboard (chat + resume)
+│       ├── ForgotPassword/        # 4-step password reset wizard
+│       ├── Landing/               # Marketing landing page
+│       │   └── components/
+│       │       ├── Header/        # Nav bar
+│       │       ├── Hero/          # Hero section
+│       │       ├── Problem/       # Problem statement
+│       │       ├── Features/      # Feature cards
+│       │       ├── Demo/          # Demo section
+│       │       ├── TechStack/     # Tech stack display
+│       │       ├── Testimonials/  # User testimonials
+│       │       ├── Contact/       # Contact form
+│       │       ├── CallToAction/  # CTA section
+│       │       ├── Footer/        # Footer
+│       │       └── BackToTop/     # Scroll-to-top button
+│       ├── Onboarding/            # 5-step onboarding wizard
+│       └── Settings/              # Profile, career & security settings
+└── public/
+    └── landing/                   # Landing page images and SVGs
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Pages & Features
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### Landing (`/`)
+Marketing page with Hero, Features, Demo, Testimonials, and Contact form sections.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+### Auth (`/login`, `/register`)
+Shared two-panel layout — form on the left, decorative showcase on the right.
 
-## Learn More
+**Register fields:** Full Name, Email, Password (min 8 chars)
+**Login fields:** Email, Password, Remember me
 
-To learn more about Next.js, take a look at the following resources:
+### Forgot Password (`/forgot-password`)
+4-step wizard:
+1. Enter email
+2. Enter 4-digit verification code
+3. Set new password
+4. Success confirmation
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+### Dashboard (`/dashboard`)
+- Resume upload (PDF / DOC / DOCX)
+- AI chat interface with starter prompts
+- Sidebar navigation (Home, Resume, Settings)
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+### Onboarding (`/onboarding`)
+5-step guided setup:
+1. Welcome
+2. Basic info (name, role, field)
+3. Skill selection (multi-select)
+4. Career goal & stage
+5. Completion → redirect to dashboard
 
-## Deploy on Vercel
+### Settings (`/settings`)
+Three tabs:
+- **Basic Information** — name, email, field
+- **Career & Learning** — career goal, stage, skills
+- **Account Security** — change password
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Quick Start
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+App runs at `http://localhost:3000`.
+
+## Environment Variables
+
+Create a `.env.local` file in the `frontend/` directory:
+
+```env
+NEXT_PUBLIC_API_URL=http://localhost:8000
+```
+
+## Backend Integration
+
+All forms currently use mock delays. To wire up the real backend:
+
+1. Set `NEXT_PUBLIC_API_URL` in `.env.local`
+2. Replace `setTimeout` calls with `fetch` to the corresponding API endpoint
+
+**Example — Register:**
+```js
+const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/auth/register`, {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({ full_name, email, password }),
+});
+const data = await res.json();
+// Store data.access_token (localStorage / cookie)
+```
+
+**Example — Authenticated request:**
+```js
+const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/user/profile`, {
+  headers: { Authorization: `Bearer ${token}` },
+});
+```
+
+See [backend/README.md](../backend/README.md) for the full API reference.
+
+## Scripts
+
+| Command | Description |
+|---------|-------------|
+| `npm run dev` | Start dev server (webpack mode) |
+| `npm run build` | Production build |
+| `npm run start` | Start production server |
+| `npm run lint` | Run ESLint |
