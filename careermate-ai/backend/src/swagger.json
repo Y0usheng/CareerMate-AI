@@ -1,0 +1,529 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "CareerMate AI API",
+    "version": "1.0.0",
+    "description": "AI-powered career development platform. Provides authentication, user profiles, onboarding, resume management, and Claude-powered career coaching."
+  },
+  "servers": [
+    { "url": "http://localhost:8000", "description": "Local development" }
+  ],
+  "tags": [
+    { "name": "Auth",       "description": "Register, login, password reset" },
+    { "name": "User",       "description": "Profile and account management" },
+    { "name": "Onboarding", "description": "Career onboarding wizard" },
+    { "name": "Resume",     "description": "Resume upload and retrieval" },
+    { "name": "Chat",       "description": "AI career coaching" },
+    { "name": "Contact",    "description": "Contact form" },
+    { "name": "System",     "description": "Health check" }
+  ],
+  "components": {
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT"
+      }
+    },
+    "schemas": {
+      "AuthResponse": {
+        "type": "object",
+        "properties": {
+          "access_token":         { "type": "string" },
+          "token_type":           { "type": "string", "example": "bearer" },
+          "user_id":              { "type": "integer" },
+          "full_name":            { "type": "string" },
+          "email":                { "type": "string", "format": "email" },
+          "onboarding_completed": { "type": "boolean" }
+        }
+      },
+      "UserProfile": {
+        "type": "object",
+        "properties": {
+          "id":                   { "type": "integer" },
+          "full_name":            { "type": "string" },
+          "email":                { "type": "string", "format": "email" },
+          "field":                { "type": "string", "nullable": true },
+          "career_goal":          { "type": "string", "nullable": true },
+          "stage":                { "type": "string", "nullable": true },
+          "skills":               { "type": "string", "nullable": true },
+          "onboarding_completed": { "type": "boolean" },
+          "created_at":           { "type": "string", "format": "date-time" }
+        }
+      },
+      "OnboardingProfile": {
+        "type": "object",
+        "properties": {
+          "id":          { "type": "integer" },
+          "user_id":     { "type": "integer" },
+          "full_name":   { "type": "string", "nullable": true },
+          "role":        { "type": "string", "nullable": true },
+          "field":       { "type": "string", "nullable": true },
+          "skills":      { "type": "array", "items": { "type": "string" } },
+          "target_role": { "type": "string", "nullable": true },
+          "stage":       { "type": "string", "nullable": true },
+          "goal":        { "type": "string", "nullable": true },
+          "created_at":  { "type": "string", "format": "date-time" }
+        }
+      },
+      "Resume": {
+        "type": "object",
+        "properties": {
+          "id":           { "type": "integer" },
+          "filename":     { "type": "string" },
+          "file_size":    { "type": "integer" },
+          "content_type": { "type": "string" },
+          "created_at":   { "type": "string", "format": "date-time" }
+        }
+      },
+      "Error": {
+        "type": "object",
+        "properties": {
+          "detail": { "type": "string" }
+        }
+      },
+      "Message": {
+        "type": "object",
+        "properties": {
+          "message": { "type": "string" }
+        }
+      }
+    },
+    "responses": {
+      "Unauthorized": {
+        "description": "Missing or invalid token",
+        "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } }
+      },
+      "Forbidden": {
+        "description": "Account inactive",
+        "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } }
+      },
+      "NotFound": {
+        "description": "Resource not found",
+        "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } }
+      },
+      "UnprocessableEntity": {
+        "description": "Validation error",
+        "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } }
+      }
+    }
+  },
+  "paths": {
+    "/health": {
+      "get": {
+        "tags": ["System"],
+        "summary": "Health check",
+        "responses": {
+          "200": {
+            "description": "Service is healthy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status":    { "type": "string", "example": "healthy" },
+                    "uptime":    { "type": "integer", "description": "Uptime in seconds" },
+                    "timestamp": { "type": "string", "format": "date-time" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/auth/register": {
+      "post": {
+        "tags": ["Auth"],
+        "summary": "Register a new account",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["full_name", "email", "password"],
+                "properties": {
+                  "full_name": { "type": "string" },
+                  "email":     { "type": "string", "format": "email" },
+                  "password":  { "type": "string", "minLength": 8 }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Account created",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/AuthResponse" } } }
+          },
+          "409": { "description": "Email already registered", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } } },
+          "422": { "$ref": "#/components/responses/UnprocessableEntity" }
+        }
+      }
+    },
+    "/api/auth/login": {
+      "post": {
+        "tags": ["Auth"],
+        "summary": "Log in",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["email", "password"],
+                "properties": {
+                  "email":    { "type": "string", "format": "email" },
+                  "password": { "type": "string" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Login successful",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/AuthResponse" } } }
+          },
+          "401": { "description": "Invalid credentials", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } } },
+          "422": { "$ref": "#/components/responses/UnprocessableEntity" }
+        }
+      }
+    },
+    "/api/auth/forgot-password": {
+      "post": {
+        "tags": ["Auth"],
+        "summary": "Request a password reset code",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["email"],
+                "properties": { "email": { "type": "string", "format": "email" } }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Always returns 200 to prevent email enumeration",
+            "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Message" } } }
+          }
+        }
+      }
+    },
+    "/api/auth/verify-code": {
+      "post": {
+        "tags": ["Auth"],
+        "summary": "Verify a password reset code",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["email", "code"],
+                "properties": {
+                  "email": { "type": "string", "format": "email" },
+                  "code":  { "type": "string", "example": "1234" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Code is valid", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Message" } } } },
+          "400": { "description": "Invalid or expired code", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } } },
+          "422": { "$ref": "#/components/responses/UnprocessableEntity" }
+        }
+      }
+    },
+    "/api/auth/reset-password": {
+      "post": {
+        "tags": ["Auth"],
+        "summary": "Reset password using a verified code",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["email", "code", "password", "confirm_password"],
+                "properties": {
+                  "email":            { "type": "string", "format": "email" },
+                  "code":             { "type": "string" },
+                  "password":         { "type": "string", "minLength": 8 },
+                  "confirm_password": { "type": "string" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Password updated", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Message" } } } },
+          "400": { "description": "Passwords do not match or invalid code", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } } },
+          "422": { "$ref": "#/components/responses/UnprocessableEntity" }
+        }
+      }
+    },
+    "/api/user/profile": {
+      "get": {
+        "tags": ["User"],
+        "summary": "Get current user profile",
+        "security": [{ "bearerAuth": [] }],
+        "responses": {
+          "200": { "description": "User profile", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/UserProfile" } } } },
+          "401": { "$ref": "#/components/responses/Unauthorized" }
+        }
+      },
+      "put": {
+        "tags": ["User"],
+        "summary": "Update profile (name, email, field)",
+        "security": [{ "bearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["full_name", "email"],
+                "properties": {
+                  "full_name": { "type": "string" },
+                  "email":     { "type": "string", "format": "email" },
+                  "field":     { "type": "string" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Updated profile", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/UserProfile" } } } },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "409": { "description": "Email in use by another account", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } } },
+          "422": { "$ref": "#/components/responses/UnprocessableEntity" }
+        }
+      }
+    },
+    "/api/user/career": {
+      "put": {
+        "tags": ["User"],
+        "summary": "Update career info (goal, stage, skills)",
+        "security": [{ "bearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "career_goal": { "type": "string" },
+                  "stage":       { "type": "string" },
+                  "skills":      { "type": "string" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Updated profile", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/UserProfile" } } } },
+          "401": { "$ref": "#/components/responses/Unauthorized" }
+        }
+      }
+    },
+    "/api/user/password": {
+      "put": {
+        "tags": ["User"],
+        "summary": "Change password",
+        "security": [{ "bearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["current_password", "new_password", "confirm_password"],
+                "properties": {
+                  "current_password": { "type": "string" },
+                  "new_password":     { "type": "string", "minLength": 8 },
+                  "confirm_password": { "type": "string" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Password updated", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Message" } } } },
+          "400": { "description": "Current password incorrect or passwords do not match", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } } },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "422": { "$ref": "#/components/responses/UnprocessableEntity" }
+        }
+      }
+    },
+    "/api/onboarding": {
+      "get": {
+        "tags": ["Onboarding"],
+        "summary": "Get onboarding profile",
+        "security": [{ "bearerAuth": [] }],
+        "responses": {
+          "200": { "description": "Onboarding profile", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/OnboardingProfile" } } } },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "404": { "$ref": "#/components/responses/NotFound" }
+        }
+      },
+      "post": {
+        "tags": ["Onboarding"],
+        "summary": "Save (create or update) onboarding profile",
+        "security": [{ "bearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["full_name", "role", "field", "stage"],
+                "properties": {
+                  "full_name":   { "type": "string" },
+                  "role":        { "type": "string" },
+                  "field":       { "type": "string" },
+                  "skills":      { "oneOf": [{ "type": "array", "items": { "type": "string" } }, { "type": "string" }] },
+                  "target_role": { "type": "string" },
+                  "stage":       { "type": "string" },
+                  "goal":        { "type": "string" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": { "description": "Onboarding profile saved", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/OnboardingProfile" } } } },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "422": { "$ref": "#/components/responses/UnprocessableEntity" }
+        }
+      }
+    },
+    "/api/resume/upload": {
+      "post": {
+        "tags": ["Resume"],
+        "summary": "Upload a resume (PDF, DOC, or DOCX)",
+        "security": [{ "bearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": { "file": { "type": "string", "format": "binary" } }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": { "description": "Resume uploaded", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Resume" } } } },
+          "400": { "description": "No file or unsupported file type", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } } },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "413": { "description": "File too large", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } } }
+        }
+      }
+    },
+    "/api/resume": {
+      "get": {
+        "tags": ["Resume"],
+        "summary": "Get active resume",
+        "security": [{ "bearerAuth": [] }],
+        "responses": {
+          "200": { "description": "Active resume info", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Resume" } } } },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "404": { "$ref": "#/components/responses/NotFound" }
+        }
+      },
+      "delete": {
+        "tags": ["Resume"],
+        "summary": "Delete active resume",
+        "security": [{ "bearerAuth": [] }],
+        "responses": {
+          "204": { "description": "Resume deleted" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "404": { "$ref": "#/components/responses/NotFound" }
+        }
+      }
+    },
+    "/api/chat": {
+      "post": {
+        "tags": ["Chat"],
+        "summary": "Send a message to the AI career coach",
+        "security": [{ "bearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["message"],
+                "properties": {
+                  "message": { "type": "string" },
+                  "history": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "role":    { "type": "string", "enum": ["user", "assistant"] },
+                        "content": { "type": "string" }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "AI reply",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": { "reply": { "type": "string" } }
+                }
+              }
+            }
+          },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "422": { "$ref": "#/components/responses/UnprocessableEntity" },
+          "503": { "description": "ANTHROPIC_API_KEY not configured", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } } }
+        }
+      }
+    },
+    "/api/contact": {
+      "post": {
+        "tags": ["Contact"],
+        "summary": "Submit a contact form message",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["fullname", "email", "message"],
+                "properties": {
+                  "fullname": { "type": "string" },
+                  "email":    { "type": "string", "format": "email" },
+                  "role":     { "type": "string" },
+                  "field":    { "type": "string" },
+                  "message":  { "type": "string", "minLength": 20 }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": { "description": "Message received", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Message" } } } },
+          "422": { "$ref": "#/components/responses/UnprocessableEntity" }
+        }
+      }
+    }
+  }
+}
