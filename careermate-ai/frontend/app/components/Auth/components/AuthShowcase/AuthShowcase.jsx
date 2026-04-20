@@ -11,19 +11,11 @@ const engineeringIcons = ["GPT", "</>", "AWS", "UX"];
 
 const AuthShowcase = () => (
     <section
-        className="relative min-h-[420px] overflow-visible rounded-[2rem] border border-white/60 p-5 shadow-[0_30px_90px_rgba(59,130,246,0.22)] sm:min-h-[520px] lg:min-h-[640px] lg:p-6"
+        className="relative flex h-full min-h-[420px] flex-col self-stretch overflow-visible rounded-[2rem] border border-white/60 p-5 shadow-[0_30px_90px_rgba(59,130,246,0.22)] sm:min-h-[520px] lg:min-h-[640px] lg:p-6"
         style={{ backgroundImage: `url(${backgroundImage.src})`, backgroundSize: "cover", backgroundPosition: "center" }}
     >
-        <div className="absolute inset-0 overflow-hidden rounded-[2rem]">
-            <div className="absolute inset-x-10 top-0 h-44 rounded-b-[50%] bg-white/55 blur-2xl" />
-            <div className="absolute -right-16 top-8 h-[36rem] w-[36rem] rounded-full border-[44px] border-white/85 opacity-90" />
-            <div className="absolute -right-2 top-24 h-[27rem] w-[27rem] rounded-full border-[28px] border-white/35 opacity-80" />
-            <div className="absolute left-8 top-18 h-[30rem] w-[30rem] rotate-[24deg] rounded-full bg-[linear-gradient(180deg,rgba(255,255,255,0.28),rgba(255,255,255,0))] blur-3xl" />
-            <div className="absolute -left-12 bottom-6 h-[18rem] w-[18rem] rounded-full bg-blue-700/75 blur-3xl" />
-            <div className="absolute inset-y-10 left-1/3 w-28 rotate-[30deg] bg-white/18 blur-3xl" />
-        </div>
 
-        <div className="relative flex h-full flex-col">
+        <div className="relative flex flex-1 flex-col">
             <button className="ml-auto inline-flex items-center gap-2 rounded-full bg-slate-950 px-4 py-3 text-[10px] font-semibold tracking-[0.16em] text-white sm:text-xs">
                 <span className="size-2 rounded-full bg-white" />
                 SUBSCRIBE
@@ -44,7 +36,7 @@ const AuthShowcase = () => (
                 </p>
             </div>
 
-            <div className="mt-8 grid gap-4 sm:mt-auto md:grid-cols-2">
+            <div className="mt-auto grid gap-4 pt-8 md:grid-cols-2">
                 <article className="rounded-[1.6rem] border border-white/65 bg-white/30 p-5 backdrop-blur-md">
                     <div className="flex items-start justify-between gap-4">
                         <p className="max-w-36 text-sm font-medium leading-6 text-slate-950 sm:text-base">

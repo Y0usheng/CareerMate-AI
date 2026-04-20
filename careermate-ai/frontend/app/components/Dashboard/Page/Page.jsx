@@ -2,8 +2,14 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useRef, useState } from "react";
-import logo from "../../Register/Header/assets/logo.png";
+import { useRouter } from "next/navigation";
+import { useEffect, useRef, useState } from "react";
+import {
+    clearAuth,
+    fetchProfile,
+    getStoredUser,
+    getToken,
+} from "../../../lib/api";
 
 const starterPrompts = [
     "Summarize my resume and suggest three improvements.",
@@ -17,7 +23,11 @@ const navItems = [
     { label: "Settings", href: "/settings", active: false },
 ];
 
+const getInitial = (name) => (name ? name.trim().charAt(0).toUpperCase() : "?");
+
 const Page = () => {
+    const router = useRouter();
+    const [user, setUser] = useState(null);
     const [resumeStatus, setResumeStatus] = useState("idle");
     const [resumeName, setResumeName] = useState("");
     const [input, setInput] = useState("");
@@ -25,6 +35,41 @@ const Page = () => {
     const [isReplying, setIsReplying] = useState(false);
     const [errorMessage, setErrorMessage] = useState("");
     const fileInputRef = useRef(null);
+
+    useEffect(() => {
+        const token = getToken();
+        if (!token) {
+            router.replace("/login");
+            return;
+        }
+
+        const cached = getStoredUser();
+        if (cached) setUser(cached);
+
+        fetchProfile()
+            .then((profile) => {
+                setUser({
+                    id: profile.id,
+                    full_name: profile.full_name,
+                    email: profile.email,
+                });
+            })
+            .catch((err) => {
+                if (err.status === 401) {
+                    clearAuth();
+                    router.replace("/login");
+                }
+            });
+    }, [router]);
+
+    const handleLogout = () => {
+        clearAuth();
+        router.replace("/login");
+    };
+
+    const displayName = user?.full_name || "";
+    const displayEmail = user?.email || "";
+    const initial = getInitial(displayName || displayEmail);
 
     const openPicker = () => fileInputRef.current?.click();
 
@@ -85,20 +130,28 @@ const Page = () => {
     return (
         <div className="min-h-screen overflow-x-auto bg-white text-slate-950">
             <div className="mx-auto flex min-h-screen min-w-[1180px] max-w-[1600px]">
-                <aside className="flex w-[190px] flex-col border-r border-slate-100 bg-slate-50/55 px-4 py-5">
-                    <Link href="/" className="inline-flex items-center">
-                        <Image src={logo} alt="CareerMate AI" width={164} height={22} priority />
+                <aside className="flex w-[220px] flex-col border-r border-slate-100 bg-slate-50/60 px-5 py-6">
+                    <Link href="/" className="inline-flex items-center gap-2.5">
+                        <Image src="/landing/13.svg" alt="CareerMate AI logo" width={28} height={28} priority />
+                        <Image
+                            src="/landing/career-mate-ai-2.svg"
+                            alt="CareerMate AI"
+                            width={132}
+                            height={22}
+                            className="h-auto w-auto"
+                            priority
+                        />
                     </Link>
 
-                    <div className="mt-8 space-y-1">
+                    <nav className="mt-10 flex flex-col gap-1">
                         {navItems.map((item) => (
                             <Link
                                 key={item.label}
                                 href={item.href}
-                                className={`flex w-full items-center gap-2 rounded-full px-3 py-2 text-xs transition ${
+                                className={`flex w-full items-center gap-2.5 rounded-xl px-3 py-2.5 text-sm transition ${
                                     item.active
-                                        ? "bg-white font-semibold text-[#4f6bff] shadow-sm"
-                                        : "text-slate-400 hover:bg-white hover:text-slate-700"
+                                        ? "bg-white font-semibold text-[#4f6bff] shadow-[0_4px_12px_rgba(79,107,255,0.08)]"
+                                        : "text-slate-500 hover:bg-white hover:text-slate-900"
                                 }`}
                             >
                                 <span
@@ -109,60 +162,42 @@ const Page = () => {
                                 {item.label}
                             </Link>
                         ))}
-                    </div>
+                    </nav>
 
-                    <div className="mt-auto rounded-[1.5rem] border border-slate-200 bg-white p-3 shadow-sm">
-                        <div className="flex items-center gap-2.5">
-                            <div className="flex size-8 items-center justify-center rounded-full bg-slate-950 text-xs font-bold text-white">
-                                R
-                            </div>
-                            <div>
-                                <p className="text-xs font-semibold text-slate-900">Ray Zhang</p>
-                                <p className="text-[11px] text-slate-400">ray@example.com</p>
-                            </div>
-                        </div>
-                        <div className="mt-3 space-y-1.5 text-[11px] text-slate-400">
-                            <p>Resume Review</p>
-                            <p>AI Chat Coaching</p>
-                            <p>Career Guidance</p>
-                        </div>
-                    </div>
+                    <button
+                        type="button"
+                        onClick={handleLogout}
+                        className="mt-auto inline-flex items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-xs font-semibold text-slate-500 transition hover:border-slate-300 hover:text-slate-900"
+                    >
+                        Log out
+                    </button>
                 </aside>
 
                 <main className="flex flex-1 flex-col px-8 py-5">
                     <div className="flex items-start justify-end">
-                        <div className="flex items-center gap-3 rounded-full border border-slate-200 bg-white px-3 py-2 shadow-sm">
+                        <Link
+                            href="/settings"
+                            className="flex items-center gap-3 rounded-full border border-slate-200 bg-white px-3 py-2 shadow-sm transition hover:border-slate-300"
+                        >
                             <div className="text-right">
-                                <p className="text-[11px] font-semibold text-slate-900">Ray Zhang</p>
-                                <div className="mt-0.5 flex items-center justify-end gap-2">
-                                    <p className="text-[10px] text-slate-400">
-                                        {resumeStatus === "uploaded"
-                                            ? "Resume uploaded"
-                                            : resumeStatus === "uploading"
-                                              ? "Uploading"
-                                              : resumeStatus === "error"
-                                                ? "Needs attention"
-                                                : "No resume yet"}
-                                    </p>
-                                    <Link
-                                        href="/settings"
-                                        className="text-[10px] font-medium text-[#4f6bff] hover:underline"
-                                    >
-                                        Settings
-                                    </Link>
-                                </div>
+                                <p className="text-xs font-semibold text-slate-900">
+                                    {displayName || "Loading..."}
+                                </p>
+                                <p className="mt-0.5 text-[11px] text-slate-400">
+                                    {displayEmail || ""}
+                                </p>
                             </div>
-                            <div className="flex size-8 items-center justify-center rounded-full bg-slate-950 text-xs font-bold text-white">
-                                R
+                            <div className="flex size-9 items-center justify-center rounded-full bg-slate-950 text-xs font-bold text-white">
+                                {initial}
                             </div>
-                        </div>
+                        </Link>
                     </div>
 
                     <div className="mx-auto flex w-full max-w-[930px] flex-1 flex-col items-center justify-center pb-10 pt-6">
                         <div className="text-center">
                             <p className="text-xs uppercase tracking-[0.2em] text-slate-400">AI resume coach</p>
                             <h1 className="mt-3 text-[44px] font-black tracking-tight text-slate-900">
-                                Hi, Ray Zhang
+                                {displayName ? `Hi, ${displayName}` : "Hi there"}
                             </h1>
                             <p className="mt-3 text-sm text-slate-500">
                                 Upload your resume and start chatting with CareerMate AI.

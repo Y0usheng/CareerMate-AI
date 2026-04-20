@@ -4,7 +4,6 @@ import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import logo from "../../Register/Header/assets/logo.png";
 
 const steps = [
     { id: "welcome", label: "Welcome" },
@@ -33,6 +32,23 @@ const skillOptions = [
     "UI Design",
     "Data Analysis",
     "Cloud",
+];
+
+const targetRoleOptions = [
+    "Frontend Developer",
+    "Backend Developer",
+    "Full Stack Developer",
+    "Mobile Developer",
+    "Data Scientist",
+    "Data Analyst",
+    "Machine Learning Engineer",
+    "DevOps Engineer",
+    "Cloud Engineer",
+    "Cybersecurity Engineer",
+    "UI / UX Designer",
+    "Product Manager",
+    "Business Analyst",
+    "QA / Test Engineer",
 ];
 
 const stepTitles = {
@@ -99,9 +115,8 @@ const Page = () => {
         }
 
         if (currentStep === "career") {
-            if (!values.targetRole.trim()) nextErrors.targetRole = "Please enter your target role.";
+            if (!values.targetRole) nextErrors.targetRole = "Please choose your target role.";
             if (!values.stage) nextErrors.stage = "Please choose your current stage.";
-            if (!values.goal.trim()) nextErrors.goal = "Please enter your main goal.";
         }
 
         return nextErrors;
@@ -127,14 +142,25 @@ const Page = () => {
                 : "border-slate-200 focus:border-[#5b63ff] focus:shadow-[0_0_0_3px_rgba(91,99,255,0.12)]"
         }`;
 
+    const selectClassName = (name) =>
+        `${fieldClassName(name)} appearance-none bg-[url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20' stroke='%2364748b' stroke-width='2'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' d='m6 8 4 4 4-4'/%3E%3C/svg%3E")] bg-[length:1rem_1rem] bg-[right_1.25rem_center] bg-no-repeat pr-10`;
+
     const titleConfig = stepTitles[currentStep];
 
     return (
         <div className="min-h-screen overflow-x-auto bg-white text-slate-950">
             <div className="mx-auto flex min-h-screen min-w-[980px] max-w-[1440px]">
                 <aside className="flex w-[220px] flex-col bg-slate-50 px-6 py-8">
-                    <Link href="/" className="inline-flex items-center">
-                        <Image src={logo} alt="CareerMate AI" width={184} height={24} priority />
+                    <Link href="/" className="inline-flex items-center gap-3">
+                        <Image src="/landing/13.svg" alt="CareerMate AI logo" width={32} height={32} priority />
+                        <Image
+                            src="/landing/career-mate-ai-2.svg"
+                            alt="CareerMate AI"
+                            width={144}
+                            height={24}
+                            className="h-auto w-auto"
+                            priority
+                        />
                     </Link>
 
                     <nav className="mt-auto pb-8">
@@ -219,7 +245,7 @@ const Page = () => {
                                         name="role"
                                         value={values.role}
                                         onChange={handleChange}
-                                        className={fieldClassName("role")}
+                                        className={selectClassName("role")}
                                     >
                                         <option value="">Select</option>
                                         <option value="student">Student</option>
@@ -240,7 +266,7 @@ const Page = () => {
                                         name="field"
                                         value={values.field}
                                         onChange={handleChange}
-                                        className={fieldClassName("field")}
+                                        className={selectClassName("field")}
                                     >
                                         <option value="">Select</option>
                                         <option value="software">Software Engineering</option>
@@ -335,14 +361,20 @@ const Page = () => {
                                     <label htmlFor="targetRole" className="mb-2 block text-xs font-medium text-slate-500">
                                         Target Role
                                     </label>
-                                    <input
+                                    <select
                                         id="targetRole"
                                         name="targetRole"
                                         value={values.targetRole}
                                         onChange={handleChange}
-                                        placeholder="For example: Frontend Developer"
-                                        className={fieldClassName("targetRole")}
-                                    />
+                                        className={selectClassName("targetRole")}
+                                    >
+                                        <option value="">Select</option>
+                                        {targetRoleOptions.map((role) => (
+                                            <option key={role} value={role}>
+                                                {role}
+                                            </option>
+                                        ))}
+                                    </select>
                                     {errors.targetRole ? (
                                         <p className="mt-2 text-xs text-rose-500">{errors.targetRole}</p>
                                     ) : null}
@@ -357,7 +389,7 @@ const Page = () => {
                                         name="stage"
                                         value={values.stage}
                                         onChange={handleChange}
-                                        className={fieldClassName("stage")}
+                                        className={selectClassName("stage")}
                                     >
                                         <option value="">Select</option>
                                         <option value="exploring">Just exploring</option>
@@ -372,7 +404,7 @@ const Page = () => {
 
                                 <div>
                                     <label htmlFor="goal" className="mb-2 block text-xs font-medium text-slate-500">
-                                        Main Goal
+                                        Main Goal <span className="text-slate-400">(optional)</span>
                                     </label>
                                     <input
                                         id="goal"
@@ -382,9 +414,6 @@ const Page = () => {
                                         placeholder="For example: get interview-ready in 30 days"
                                         className={fieldClassName("goal")}
                                     />
-                                    {errors.goal ? (
-                                        <p className="mt-2 text-xs text-rose-500">{errors.goal}</p>
-                                    ) : null}
                                 </div>
                             </div>
 

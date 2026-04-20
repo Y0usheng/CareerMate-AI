@@ -3,7 +3,6 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useMemo, useState } from "react";
-import logo from "../../Register/Header/assets/logo.png";
 
 const navItems = [
     { label: "Home", href: "/dashboard" },
@@ -109,8 +108,16 @@ const Page = () => {
         <div className="min-h-screen overflow-x-auto bg-white text-slate-950">
             <div className="mx-auto flex min-h-screen min-w-[1180px] max-w-[1600px]">
                 <aside className="flex w-[190px] flex-col border-r border-slate-100 bg-slate-50/55 px-4 py-5">
-                    <Link href="/" className="inline-flex items-center">
-                        <Image src={logo} alt="CareerMate AI" width={164} height={22} priority />
+                    <Link href="/" className="inline-flex items-center gap-3">
+                        <Image src="/landing/13.svg" alt="CareerMate AI logo" width={28} height={28} priority />
+                        <Image
+                            src="/landing/career-mate-ai-2.svg"
+                            alt="CareerMate AI"
+                            width={132}
+                            height={22}
+                            className="h-auto w-auto"
+                            priority
+                        />
                     </Link>
 
                     <div className="mt-8 space-y-1">

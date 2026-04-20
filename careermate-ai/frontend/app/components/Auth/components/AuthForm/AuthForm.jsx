@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 import AuthField from "../AuthField";
 import { authContent } from "../../data";
+import { login as apiLogin, register as apiRegister, setAuth } from "../../../../lib/api";
 
 const initialValuesByMode = {
     login: {
@@ -82,31 +83,50 @@ const AuthForm = ({ mode }) => {
             return;
         }
 
-        if (mode === "register" && values.email.toLowerCase().includes("exists")) {
-            setInfoModal("Email already registered, please log in instead.");
-            return;
-        }
-
-        if (mode === "login" && values.email.toLowerCase().includes("network")) {
-            setBanner("Network error, please try again later.");
-            return;
-        }
-
         setIsSubmitting(true);
         setInfoModal("");
 
-        await new Promise((resolve) => setTimeout(resolve, 1000));
+        try {
+            const result =
+                mode === "register"
+                    ? await apiRegister(values.fullName, values.email, values.password)
+                    : await apiLogin(values.email, values.password);
 
-        setIsSubmitting(false);
+            setAuth(result.access_token, {
+                id: result.user_id,
+                full_name: result.full_name,
+                email: result.email,
+                onboarding_completed: result.onboarding_completed,
+            });
 
-        if (mode === "register") {
-            setSuccessView(true);
-            setTimeout(() => router.push(content.redirectHref), 1500);
-            return;
+            setIsSubmitting(false);
+
+            if (mode === "register") {
+                setSuccessView(true);
+                setTimeout(() => router.push(content.redirectHref), 1500);
+                return;
+            }
+
+            setSuccessToast(content.successMessage);
+            const nextHref = result.onboarding_completed ? content.redirectHref : "/onboarding";
+            setTimeout(() => router.push(nextHref), 1200);
+        } catch (err) {
+            setIsSubmitting(false);
+
+            if (err.status === 409) {
+                setInfoModal("Email already registered, please log in instead.");
+                return;
+            }
+            if (err.status === 401) {
+                setBanner("Invalid email or password. Please try again.");
+                return;
+            }
+            if (!err.status) {
+                setBanner("Network error, please try again later.");
+                return;
+            }
+            setBanner(err.message || "Something went wrong. Please try again.");
         }
-
-        setSuccessToast(content.successMessage);
-        setTimeout(() => router.push(content.redirectHref), 1200);
     };
 
     if (successView) {

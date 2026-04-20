@@ -3,7 +3,6 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useMemo, useRef, useState } from "react";
-import logo from "../../Register/Header/assets/logo.png";
 
 const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -114,8 +113,16 @@ const Page = () => {
         <div className="min-h-screen bg-white text-slate-950">
             <div className="mx-auto flex min-h-screen max-w-7xl flex-col px-5 py-5">
                 <div className="flex items-center justify-between">
-                    <Link href="/" className="inline-flex items-center">
-                        <Image src={logo} alt="CareerMate AI" width={184} height={24} priority />
+                    <Link href="/" className="inline-flex items-center gap-3">
+                        <Image src="/landing/13.svg" alt="CareerMate AI logo" width={32} height={32} priority />
+                        <Image
+                            src="/landing/career-mate-ai-2.svg"
+                            alt="CareerMate AI"
+                            width={144}
+                            height={24}
+                            className="h-auto w-auto"
+                            priority
+                        />
                     </Link>
                     <Link
                         href="/login"
