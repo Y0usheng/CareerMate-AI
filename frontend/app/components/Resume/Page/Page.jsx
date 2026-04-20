@@ -4,6 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { MobileNavDrawer, MobileTopBar } from "../../Shared/MobileShell";
 import {
     clearAuth,
     deleteResume,
@@ -69,6 +70,7 @@ const Page = () => {
     const [viewMode, setViewMode] = useState("grid");
     const [confirmDeleteId, setConfirmDeleteId] = useState(null);
     const [toast, setToast] = useState("");
+    const [mobileNavOpen, setMobileNavOpen] = useState(false);
     const fileInputRef = useRef(null);
 
     useEffect(() => {
@@ -186,9 +188,22 @@ const Page = () => {
     const totalSize = resumes.reduce((acc, r) => acc + (r.file_size || 0), 0);
 
     return (
-        <div className="min-h-screen overflow-x-auto bg-white text-slate-950">
-            <div className="mx-auto flex min-h-screen min-w-[1180px] max-w-[1600px]">
-                <aside className="flex w-[220px] flex-col border-r border-slate-100 bg-slate-50/60 px-5 py-6">
+        <div className="min-h-screen bg-white text-slate-950">
+            <MobileTopBar
+                onOpenMenu={() => setMobileNavOpen(true)}
+                displayName={displayName}
+                displayEmail={displayEmail}
+                initial={initial}
+            />
+            <MobileNavDrawer
+                open={mobileNavOpen}
+                onClose={() => setMobileNavOpen(false)}
+                navItems={navItems}
+                activeLabel="Resume"
+                onLogout={handleLogout}
+            />
+            <div className="mx-auto flex min-h-screen max-w-[1600px] flex-col lg:flex-row">
+                <aside className="hidden w-[220px] flex-col border-r border-slate-100 bg-slate-50/60 px-5 py-6 lg:flex">
                     <Link href="/" className="inline-flex items-center gap-2.5">
                         <Image src="/landing/13.svg" alt="CareerMate AI logo" width={28} height={28} priority />
                         <Image
@@ -232,8 +247,8 @@ const Page = () => {
                     </button>
                 </aside>
 
-                <main className="flex flex-1 flex-col px-10 py-5">
-                    <div className="flex items-start justify-end">
+                <main className="flex flex-1 flex-col px-4 py-5 sm:px-6 lg:px-10">
+                    <div className="hidden items-start justify-end lg:flex">
                         <Link
                             href="/settings"
                             className="flex items-center gap-3 rounded-full border border-slate-200 bg-white px-3 py-2 shadow-sm transition hover:border-slate-300"
@@ -248,11 +263,11 @@ const Page = () => {
                         </Link>
                     </div>
 
-                    <div className="mt-6 flex flex-col">
-                        <div className="flex items-end justify-between gap-6">
+                    <div className="mt-4 flex flex-col lg:mt-6">
+                        <div className="flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-end sm:gap-6">
                             <div>
                                 <p className="text-xs uppercase tracking-[0.2em] text-slate-400">My Resumes</p>
-                                <h1 className="mt-2 text-3xl font-black tracking-tight text-slate-900">Resume Drive</h1>
+                                <h1 className="mt-2 text-2xl font-black tracking-tight text-slate-900 sm:text-3xl">Resume Drive</h1>
                                 <p className="mt-2 text-sm text-slate-500">
                                     Store, manage, and revisit every version of your resume in one place.
                                 </p>
@@ -277,19 +292,19 @@ const Page = () => {
                             </div>
                         </div>
 
-                        <div className="mt-6 flex items-center justify-between gap-4 rounded-[1.5rem] border border-slate-200 bg-white px-4 py-3 shadow-sm">
+                        <div className="mt-6 flex flex-col gap-3 rounded-[1.5rem] border border-slate-200 bg-white px-4 py-3 shadow-sm sm:flex-row sm:items-center sm:justify-between sm:gap-4">
                             <div className="flex items-center gap-3">
-                                <div className="flex size-9 items-center justify-center rounded-full bg-slate-50 text-slate-400">
+                                <div className="flex size-9 shrink-0 items-center justify-center rounded-full bg-slate-50 text-slate-400">
                                     🔍
                                 </div>
                                 <input
                                     value={search}
                                     onChange={(e) => setSearch(e.target.value)}
                                     placeholder="Search in your resumes..."
-                                    className="h-9 w-[360px] border-none bg-transparent text-sm text-slate-800 outline-none placeholder:text-slate-400"
+                                    className="h-9 w-full border-none bg-transparent text-sm text-slate-800 outline-none placeholder:text-slate-400 sm:w-[360px]"
                                 />
                             </div>
-                            <div className="flex items-center gap-4">
+                            <div className="flex items-center justify-between gap-4 sm:justify-end">
                                 <div className="text-xs text-slate-400">
                                     {resumes.length} {resumes.length === 1 ? "file" : "files"} · {formatBytes(totalSize)}
                                 </div>
@@ -330,7 +345,7 @@ const Page = () => {
                                     uploading={uploading}
                                 />
                             ) : viewMode === "grid" ? (
-                                <div className="grid grid-cols-2 gap-4 lg:grid-cols-3 xl:grid-cols-4">
+                                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
                                     {filteredResumes.map((resume) => (
                                         <ResumeCard
                                             key={resume.id}
@@ -341,8 +356,9 @@ const Page = () => {
                                     ))}
                                 </div>
                             ) : (
-                                <div className="overflow-hidden rounded-[1.5rem] border border-slate-200 bg-white shadow-sm">
-                                    <div className="grid grid-cols-[minmax(0,1fr)_140px_120px_160px] items-center gap-4 border-b border-slate-100 px-6 py-3 text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-400">
+                                <div className="overflow-x-auto rounded-[1.5rem] border border-slate-200 bg-white shadow-sm">
+                                  <div className="min-w-[640px]">
+                                    <div className="grid grid-cols-[minmax(0,1fr)_140px_120px_160px] items-center gap-4 border-b border-slate-100 px-4 py-3 text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-400 sm:px-6">
                                         <div>Name</div>
                                         <div>Uploaded</div>
                                         <div>Size</div>
@@ -358,6 +374,7 @@ const Page = () => {
                                             />
                                         ))}
                                     </ul>
+                                  </div>
                                 </div>
                             )}
                         </div>
@@ -474,7 +491,7 @@ const ResumeCard = ({ resume, onDownload, onDelete }) => {
 const ResumeRow = ({ resume, onDownload, onDelete }) => {
     const meta = getMeta(resume.filename);
     return (
-        <li className="grid grid-cols-[minmax(0,1fr)_140px_120px_160px] items-center gap-4 border-b border-slate-100 px-6 py-3 text-sm text-slate-700 last:border-b-0 hover:bg-slate-50/60">
+        <li className="grid grid-cols-[minmax(0,1fr)_140px_120px_160px] items-center gap-4 border-b border-slate-100 px-4 py-3 text-sm text-slate-700 last:border-b-0 hover:bg-slate-50/60 sm:px-6">
             <div className="flex min-w-0 items-center gap-3">
                 <div
                     className={`flex size-10 shrink-0 items-center justify-center rounded-lg border text-[10px] font-bold ${meta.color}`}

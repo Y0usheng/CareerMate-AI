@@ -149,16 +149,16 @@ const AuthForm = ({ mode }) => {
     }
 
     return (
-        <section className="relative flex min-h-[640px] items-center">
+        <section className="relative flex min-h-[560px] items-center lg:min-h-[640px]">
             <div className="mx-auto w-full max-w-[28rem]">
-                <div className="mb-10">
+                <div className="mb-8 lg:mb-10">
                     <Link
                         href="/"
                         className="mb-6 inline-flex text-sm font-semibold text-slate-500 hover:text-[#4f6bff]"
                     >
                         ← Back to home
                     </Link>
-                    <h1 className="text-4xl font-black tracking-tight text-slate-950">{cardTitle}</h1>
+                    <h1 className="text-3xl font-black tracking-tight text-slate-950 sm:text-4xl">{cardTitle}</h1>
                     <p className="mt-3 text-sm text-slate-500">{content.description}</p>
                 </div>
 

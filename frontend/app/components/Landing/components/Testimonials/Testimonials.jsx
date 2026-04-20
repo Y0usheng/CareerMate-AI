@@ -16,7 +16,7 @@ const Testimonials = () => (
                         key={testimonial.name}
                         className="grid overflow-hidden rounded-[2rem] border border-slate-200 bg-white shadow-sm transition hover:-translate-y-1 hover:shadow-[0_24px_48px_rgba(15,23,42,0.08)] sm:grid-cols-[0.9fr_1.2fr]"
                     >
-                        <div className="relative min-h-72">
+                        <div className="relative h-56 sm:h-auto sm:min-h-72">
                             <Image
                                 src={testimonial.image}
                                 alt={testimonial.name}

@@ -234,10 +234,10 @@ const Page = () => {
     const titleConfig = stepTitles[currentStep];
 
     return (
-        <div className="min-h-screen overflow-x-auto bg-white text-slate-950">
-            <div className="mx-auto flex min-h-screen min-w-[980px] max-w-[1440px]">
-                <aside className="flex w-[220px] flex-col bg-slate-50 px-6 py-8">
-                    <Link href="/" className="inline-flex items-center gap-3">
+        <div className="min-h-screen bg-white text-slate-950">
+            <div className="mx-auto flex min-h-screen max-w-[1440px] flex-col lg:flex-row">
+                <aside className="flex flex-row items-center gap-4 bg-slate-50 px-4 py-4 sm:px-6 lg:w-[220px] lg:flex-col lg:items-stretch lg:gap-0 lg:px-6 lg:py-8">
+                    <Link href="/" className="inline-flex shrink-0 items-center gap-3">
                         <Image src="/landing/13.svg" alt="CareerMate AI logo" width={32} height={32} priority />
                         <Image
                             src="/landing/career-mate-ai-2.svg"
@@ -249,14 +249,14 @@ const Page = () => {
                         />
                     </Link>
 
-                    <nav className="mt-auto pb-8">
-                        <ol className="space-y-5">
+                    <nav className="flex-1 overflow-x-auto lg:mt-auto lg:overflow-visible lg:pb-8">
+                        <ol className="flex gap-4 lg:flex-col lg:gap-0 lg:space-y-5">
                             {steps.map((item, index) => {
                                 const active = index === step;
                                 const completed = index < step;
 
                                 return (
-                                    <li key={item.id} className="flex items-center gap-3">
+                                    <li key={item.id} className="flex shrink-0 items-center gap-2 lg:gap-3">
                                         <span
                                             className={`flex size-5 items-center justify-center rounded-full text-[10px] font-bold ${
                                                 active || completed
@@ -267,7 +267,7 @@ const Page = () => {
                                             {index + 1}
                                         </span>
                                         <span
-                                            className={`text-sm ${
+                                            className={`whitespace-nowrap text-xs sm:text-sm ${
                                                 active ? "font-semibold text-[#4f6bff]" : "text-slate-400"
                                             }`}
                                         >
@@ -280,10 +280,10 @@ const Page = () => {
                     </nav>
                 </aside>
 
-                <main className="flex flex-1 items-center justify-center px-16 py-12">
+                <main className="flex flex-1 items-center justify-center px-5 py-8 sm:px-8 lg:px-16 lg:py-12">
                     {currentStep === "welcome" ? (
                         <div className="text-center">
-                            <h1 className="text-5xl font-black tracking-tight text-slate-900">
+                            <h1 className="text-3xl font-black tracking-tight text-slate-900 sm:text-4xl lg:text-5xl">
                                 {titleConfig.title}
                             </h1>
                             <p className="mt-4 text-sm text-slate-500">{titleConfig.description}</p>
@@ -530,7 +530,7 @@ const Page = () => {
 
                     {currentStep === "finish" ? (
                         <div className="text-center">
-                            <h2 className="text-5xl font-black tracking-tight text-slate-900">
+                            <h2 className="text-3xl font-black tracking-tight text-slate-900 sm:text-4xl lg:text-5xl">
                                 {titleConfig.title}
                             </h2>
                             <p className="mt-4 text-sm text-slate-500">{titleConfig.description}</p>

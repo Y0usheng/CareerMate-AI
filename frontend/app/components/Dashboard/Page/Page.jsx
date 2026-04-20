@@ -4,6 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
+import { MobileNavDrawer, MobileTopBar } from "../../Shared/MobileShell";
 import {
     clearAuth,
     fetchProfile,
@@ -34,6 +35,7 @@ const Page = () => {
     const [messages, setMessages] = useState([]);
     const [isReplying, setIsReplying] = useState(false);
     const [errorMessage, setErrorMessage] = useState("");
+    const [mobileNavOpen, setMobileNavOpen] = useState(false);
     const fileInputRef = useRef(null);
 
     useEffect(() => {
@@ -128,9 +130,22 @@ const Page = () => {
     const showPromptExamples = resumeStatus === "uploaded" && messages.length <= 1;
 
     return (
-        <div className="min-h-screen overflow-x-auto bg-white text-slate-950">
-            <div className="mx-auto flex min-h-screen min-w-[1180px] max-w-[1600px]">
-                <aside className="flex w-[220px] flex-col border-r border-slate-100 bg-slate-50/60 px-5 py-6">
+        <div className="min-h-screen bg-white text-slate-950">
+            <MobileTopBar
+                onOpenMenu={() => setMobileNavOpen(true)}
+                displayName={displayName}
+                displayEmail={displayEmail}
+                initial={initial}
+            />
+            <MobileNavDrawer
+                open={mobileNavOpen}
+                onClose={() => setMobileNavOpen(false)}
+                navItems={navItems}
+                activeLabel="Home"
+                onLogout={handleLogout}
+            />
+            <div className="mx-auto flex min-h-screen max-w-[1600px] flex-col lg:flex-row">
+                <aside className="hidden w-[220px] flex-col border-r border-slate-100 bg-slate-50/60 px-5 py-6 lg:flex">
                     <Link href="/" className="inline-flex items-center gap-2.5">
                         <Image src="/landing/13.svg" alt="CareerMate AI logo" width={28} height={28} priority />
                         <Image
@@ -173,8 +188,8 @@ const Page = () => {
                     </button>
                 </aside>
 
-                <main className="flex flex-1 flex-col px-8 py-5">
-                    <div className="flex items-start justify-end">
+                <main className="flex flex-1 flex-col px-4 py-5 sm:px-6 lg:px-8">
+                    <div className="hidden items-start justify-end lg:flex">
                         <Link
                             href="/settings"
                             className="flex items-center gap-3 rounded-full border border-slate-200 bg-white px-3 py-2 shadow-sm transition hover:border-slate-300"
@@ -193,10 +208,10 @@ const Page = () => {
                         </Link>
                     </div>
 
-                    <div className="mx-auto flex w-full max-w-[930px] flex-1 flex-col items-center justify-center pb-10 pt-6">
+                    <div className="mx-auto flex w-full max-w-[930px] flex-1 flex-col items-center justify-center pb-10 pt-4 lg:pt-6">
                         <div className="text-center">
                             <p className="text-xs uppercase tracking-[0.2em] text-slate-400">AI resume coach</p>
-                            <h1 className="mt-3 text-[44px] font-black tracking-tight text-slate-900">
+                            <h1 className="mt-3 text-3xl font-black tracking-tight text-slate-900 sm:text-4xl lg:text-[44px]">
                                 {displayName ? `Hi, ${displayName}` : "Hi there"}
                             </h1>
                             <p className="mt-3 text-sm text-slate-500">

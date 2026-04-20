@@ -11,7 +11,7 @@ const Problem = () => (
             </div>
 
             <div className="grid gap-6 lg:grid-cols-[1fr_1.05fr]">
-                <div className="space-y-16">
+                <div className="space-y-4 sm:space-y-8 lg:space-y-16">
                     {problemPoints.map((point) => (
                         <div
                             key={point}
@@ -27,7 +27,7 @@ const Problem = () => (
                     ))}
                 </div>
 
-                <div className="relative overflow-hidden rounded-[2rem] bg-[linear-gradient(135deg,#4F8CFF_0%,#2AB5F6_100%)] p-8 text-white sm:p-10">
+                <div className="relative overflow-hidden rounded-[2rem] bg-[linear-gradient(135deg,#4F8CFF_0%,#2AB5F6_100%)] p-6 pb-32 text-white sm:p-10 sm:pb-32 lg:pb-10">
                     <div className="relative z-10 max-w-sm">
                         <h3 className="text-3xl font-bold leading-tight">
                             CareerMate AI helps you fix all of that, smartly.
@@ -38,7 +38,7 @@ const Problem = () => (
                         alt="Career growth illustration"
                         width={320}
                         height={320}
-                        className="pointer-events-none absolute -bottom-20 right-0 h-auto w-44 sm:w-56"
+                        className="pointer-events-none absolute -bottom-10 right-0 h-auto w-36 sm:-bottom-16 sm:w-48 lg:-bottom-20 lg:w-56"
                     />
                 </div>
             </div>

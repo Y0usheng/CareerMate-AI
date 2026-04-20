@@ -4,6 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
+import { MobileNavDrawer, MobileTopBar } from "../../Shared/MobileShell";
 import {
     clearAuth,
     fetchProfile,
@@ -72,6 +73,7 @@ const Page = () => {
     const [errors, setErrors] = useState({});
     const [toast, setToast] = useState("");
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [mobileNavOpen, setMobileNavOpen] = useState(false);
 
     const applyProfile = (data) => {
         setUser(data);
@@ -226,9 +228,22 @@ const Page = () => {
     const initial = getInitial(displayName || displayEmail);
 
     return (
-        <div className="min-h-screen overflow-x-auto bg-white text-slate-950">
-            <div className="mx-auto flex min-h-screen min-w-[1180px] max-w-[1600px]">
-                <aside className="flex w-[220px] flex-col border-r border-slate-100 bg-slate-50/60 px-5 py-6">
+        <div className="min-h-screen bg-white text-slate-950">
+            <MobileTopBar
+                onOpenMenu={() => setMobileNavOpen(true)}
+                displayName={displayName}
+                displayEmail={displayEmail}
+                initial={initial}
+            />
+            <MobileNavDrawer
+                open={mobileNavOpen}
+                onClose={() => setMobileNavOpen(false)}
+                navItems={navItems}
+                activeLabel="Settings"
+                onLogout={handleLogout}
+            />
+            <div className="mx-auto flex min-h-screen max-w-[1600px] flex-col lg:flex-row">
+                <aside className="hidden w-[220px] flex-col border-r border-slate-100 bg-slate-50/60 px-5 py-6 lg:flex">
                     <Link href="/" className="inline-flex items-center gap-2.5">
                         <Image src="/landing/13.svg" alt="CareerMate AI logo" width={28} height={28} priority />
                         <Image
@@ -272,8 +287,8 @@ const Page = () => {
                     </button>
                 </aside>
 
-                <main className="flex flex-1 flex-col px-8 py-5">
-                    <div className="flex items-start justify-end">
+                <main className="flex flex-1 flex-col px-4 py-5 sm:px-6 lg:px-8">
+                    <div className="hidden items-start justify-end lg:flex">
                         <Link
                             href="/settings"
                             className="flex items-center gap-3 rounded-full border border-slate-200 bg-white px-3 py-2 shadow-sm transition hover:border-slate-300"
@@ -288,7 +303,7 @@ const Page = () => {
                         </Link>
                     </div>
 
-                    <div className="mx-auto flex w-full max-w-[980px] flex-1 flex-col pt-4">
+                    <div className="mx-auto flex w-full max-w-[980px] flex-1 flex-col pt-2 lg:pt-4">
                         <div>
                             <h1 className="text-xl font-bold text-slate-900">Personal Settings</h1>
                             <p className="mt-2 text-sm text-slate-500">
@@ -296,8 +311,8 @@ const Page = () => {
                             </p>
                         </div>
 
-                        <div className="mt-8 flex gap-8">
-                            <div className="w-[230px] rounded-[1.5rem] border border-slate-200 bg-white p-4 shadow-sm">
+                        <div className="mt-6 flex flex-col gap-6 lg:mt-8 lg:flex-row lg:gap-8">
+                            <div className="w-full rounded-[1.5rem] border border-slate-200 bg-white p-4 shadow-sm lg:w-[230px]">
                                 <div className="flex items-center gap-3 rounded-2xl bg-slate-50 px-3 py-3">
                                     <div className="flex size-10 items-center justify-center rounded-full bg-slate-950 text-sm font-bold text-white">
                                         {initial}
@@ -310,7 +325,7 @@ const Page = () => {
                                     </div>
                                 </div>
 
-                                <div className="mt-4 space-y-2">
+                                <div className="mt-4 flex gap-2 overflow-x-auto lg:flex-col lg:space-y-2 lg:overflow-visible">
                                     {tabs.map((tab) => (
                                         <button
                                             key={tab.id}
@@ -319,7 +334,7 @@ const Page = () => {
                                                 setActiveTab(tab.id);
                                                 setErrors({});
                                             }}
-                                            className={`flex w-full items-center gap-2 rounded-full px-3 py-2 text-xs transition ${
+                                            className={`flex shrink-0 items-center gap-2 whitespace-nowrap rounded-full px-3 py-2 text-xs transition lg:w-full ${
                                                 activeTab === tab.id
                                                     ? "bg-[#eef1ff] font-semibold text-[#4f6bff]"
                                                     : "text-slate-400 hover:bg-slate-50 hover:text-slate-700"
@@ -336,8 +351,8 @@ const Page = () => {
                                 </div>
                             </div>
 
-                            <div className="flex-1 rounded-[1.5rem] border border-slate-200 bg-white p-6 shadow-sm">
-                                <div className="flex items-start justify-between gap-6">
+                            <div className="flex-1 rounded-[1.5rem] border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
+                                <div className="flex flex-col items-start justify-between gap-4 sm:flex-row sm:gap-6">
                                     <div>
                                         <h2 className="text-base font-semibold text-slate-900">{tabTitle}</h2>
                                         <p className="mt-2 text-sm text-slate-500">
@@ -358,7 +373,7 @@ const Page = () => {
                                     </button>
                                 </div>
 
-                                <div className="mt-8 max-w-[520px] space-y-4">
+                                <div className="mt-6 max-w-[520px] space-y-4 sm:mt-8">
                                     {activeTab === "basic" ? (
                                         <>
                                             <div>

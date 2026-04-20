@@ -2,13 +2,13 @@ import Image from "next/image";
 import Link from "next/link";
 
 const Hero = () => (
-    <section className="overflow-hidden px-6 pb-20 pt-16 lg:px-10 lg:pb-28 lg:pt-24">
+    <section className="overflow-hidden px-5 pb-14 pt-10 sm:px-6 sm:pb-20 sm:pt-16 lg:px-10 lg:pb-28 lg:pt-24">
         <div className="mx-auto flex max-w-7xl flex-col items-center">
             <div className="max-w-4xl text-center">
                 <span className="inline-flex rounded-full border border-sky-200 bg-sky-50 px-4 py-2 text-sm font-semibold text-sky-700">
                     AI career guidance for resumes, interviews, and growth
                 </span>
-                <h1 className="mt-6 text-5xl font-black tracking-tight text-slate-950 sm:text-6xl lg:text-7xl">
+                <h1 className="mt-6 text-4xl font-black tracking-tight text-slate-950 sm:text-6xl lg:text-7xl">
                     Your AI Career Practice Partner
                 </h1>
                 <p className="mx-auto mt-6 max-w-2xl text-lg leading-8 text-slate-600 sm:text-xl">
