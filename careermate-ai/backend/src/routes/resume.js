@@ -74,8 +74,6 @@ router.post('/upload', requireAuth, catchErrors(async (req, res) => {
 
   const userId = req.user.id;
 
-  db.prepare('UPDATE resumes SET is_active = 0 WHERE user_id = ?').run(userId);
-
   const result = db.prepare(
     `INSERT INTO resumes (user_id, filename, stored_filename, file_path, file_size, content_type)
      VALUES (?, ?, ?, ?, ?, ?)`
@@ -85,23 +83,33 @@ router.post('/upload', requireAuth, catchErrors(async (req, res) => {
   return res.status(201).json(formatResume(resume));
 }));
 
-// GET /api/resume
+// GET /api/resume — list all resumes for the current user
 router.get('/', requireAuth, catchErrors(async (req, res) => {
-  const resume = db
-    .prepare('SELECT * FROM resumes WHERE user_id = ? AND is_active = 1 ORDER BY created_at DESC LIMIT 1')
-    .get(req.user.id);
-
-  if (!resume) throw new NotFoundError('No active resume found');
-  return res.json(formatResume(resume));
+  const resumes = db
+    .prepare('SELECT * FROM resumes WHERE user_id = ? ORDER BY created_at DESC')
+    .all(req.user.id);
+  return res.json(resumes.map(formatResume));
 }));
 
-// DELETE /api/resume
-router.delete('/', requireAuth, catchErrors(async (req, res) => {
+// GET /api/resume/:id/download
+router.get('/:id/download', requireAuth, catchErrors(async (req, res) => {
   const resume = db
-    .prepare('SELECT * FROM resumes WHERE user_id = ? AND is_active = 1 ORDER BY created_at DESC LIMIT 1')
-    .get(req.user.id);
+    .prepare('SELECT * FROM resumes WHERE id = ? AND user_id = ?')
+    .get(Number(req.params.id), req.user.id);
 
-  if (!resume) throw new NotFoundError('No active resume found');
+  if (!resume) throw new NotFoundError('Resume not found');
+  if (!fs.existsSync(resume.file_path)) throw new NotFoundError('File missing on server');
+
+  res.download(resume.file_path, resume.filename);
+}));
+
+// DELETE /api/resume/:id
+router.delete('/:id', requireAuth, catchErrors(async (req, res) => {
+  const resume = db
+    .prepare('SELECT * FROM resumes WHERE id = ? AND user_id = ?')
+    .get(Number(req.params.id), req.user.id);
+
+  if (!resume) throw new NotFoundError('Resume not found');
 
   try {
     if (fs.existsSync(resume.file_path)) fs.unlinkSync(resume.file_path);

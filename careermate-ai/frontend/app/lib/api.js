@@ -74,3 +74,74 @@ export async function register(fullName, email, password) {
 export async function fetchProfile() {
     return apiFetch("/user/profile");
 }
+
+export async function updateProfile(payload) {
+    return apiFetch("/user/profile", {
+        method: "PUT",
+        body: JSON.stringify(payload),
+    });
+}
+
+export async function updateCareer(payload) {
+    return apiFetch("/user/career", {
+        method: "PUT",
+        body: JSON.stringify(payload),
+    });
+}
+
+export async function updatePassword(payload) {
+    return apiFetch("/user/password", {
+        method: "PUT",
+        body: JSON.stringify(payload),
+    });
+}
+
+export async function submitOnboarding(payload) {
+    return apiFetch("/onboarding", {
+        method: "POST",
+        body: JSON.stringify(payload),
+    });
+}
+
+export async function fetchOnboarding() {
+    return apiFetch("/onboarding");
+}
+
+export async function fetchResumes() {
+    return apiFetch("/resume");
+}
+
+export async function deleteResume(id) {
+    return apiFetch(`/resume/${id}`, { method: "DELETE" });
+}
+
+export function resumeDownloadUrl(id) {
+    return `${API_BASE_URL}/resume/${id}/download`;
+}
+
+export async function uploadResume(file) {
+    const token = getToken();
+    const formData = new FormData();
+    formData.append("file", file);
+
+    const response = await fetch(`${API_BASE_URL}/resume/upload`, {
+        method: "POST",
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+        body: formData,
+    });
+
+    let data = {};
+    try {
+        data = await response.json();
+    } catch {
+        data = {};
+    }
+
+    if (!response.ok) {
+        const err = new Error(data.detail || data.message || "Upload failed");
+        err.status = response.status;
+        err.data = data;
+        throw err;
+    }
+    return data;
+}

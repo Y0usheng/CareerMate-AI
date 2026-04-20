@@ -19,7 +19,7 @@ const starterPrompts = [
 
 const navItems = [
     { label: "Home", href: "/dashboard", active: true },
-    { label: "Resume", href: "/dashboard", active: false },
+    { label: "Resume", href: "/resume", active: false },
     { label: "Settings", href: "/settings", active: false },
 ];
 

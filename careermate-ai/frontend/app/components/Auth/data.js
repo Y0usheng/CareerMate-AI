@@ -11,7 +11,7 @@ export const authContent = {
             { name: "password", label: "Password", type: "password", placeholder: "Your password" },
         ],
         successMessage: "Logged in successfully. Redirecting...",
-        redirectHref: "/",
+        redirectHref: "/dashboard",
     },
     register: {
         title: "Create Your Account",

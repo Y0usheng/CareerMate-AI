@@ -71,11 +71,11 @@ router.post(
       record = db.prepare('SELECT * FROM onboarding_profiles WHERE id = ?').get(result.lastInsertRowid);
     }
 
-    // Sync user fields
+    // Sync user fields — career_goal stores the target role (what the user is aiming for)
     db.prepare(
       `UPDATE users SET full_name = ?, field = ?, career_goal = ?, stage = ?, skills = ?,
        onboarding_completed = 1, updated_at = datetime('now') WHERE id = ?`
-    ).run(full_name, field, goal || null, stage, skillsStr, userId);
+    ).run(full_name, field, target_role || goal || null, stage, skillsStr, userId);
 
     return res.status(201).json(formatOnboarding(record));
   })

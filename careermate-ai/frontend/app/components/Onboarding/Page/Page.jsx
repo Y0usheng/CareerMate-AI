@@ -3,7 +3,15 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import {
+    clearAuth,
+    fetchProfile,
+    getStoredUser,
+    getToken,
+    setAuth,
+    submitOnboarding,
+} from "../../../lib/api";
 
 const steps = [
     { id: "welcome", label: "Welcome" },
@@ -79,8 +87,46 @@ const Page = () => {
     const [step, setStep] = useState(0);
     const [values, setValues] = useState(initialValues);
     const [errors, setErrors] = useState({});
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [submitError, setSubmitError] = useState("");
 
     const currentStep = steps[step].id;
+
+    useEffect(() => {
+        const token = getToken();
+        if (!token) {
+            router.replace("/login");
+            return;
+        }
+
+        const cached = getStoredUser();
+        if (cached?.full_name) {
+            setValues((current) => ({ ...current, fullName: cached.full_name }));
+        }
+
+        fetchProfile()
+            .then((profile) => {
+                setValues((current) => ({
+                    ...current,
+                    fullName: current.fullName || profile.full_name || "",
+                    field: current.field || profile.field || "",
+                    skills:
+                        current.skills.length > 0
+                            ? current.skills
+                            : profile.skills
+                              ? profile.skills.split(",").map((s) => s.trim()).filter(Boolean)
+                              : [],
+                    stage: current.stage || profile.stage || "",
+                    goal: current.goal || profile.career_goal || "",
+                }));
+            })
+            .catch((err) => {
+                if (err.status === 401) {
+                    clearAuth();
+                    router.replace("/login");
+                }
+            });
+    }, [router]);
 
     const setFieldValue = (name, value) => {
         setValues((current) => ({ ...current, [name]: value }));
@@ -122,11 +168,51 @@ const Page = () => {
         return nextErrors;
     };
 
+    const persistOnboarding = async () => {
+        setSubmitError("");
+        setIsSubmitting(true);
+        try {
+            await submitOnboarding({
+                full_name: values.fullName,
+                role: values.role,
+                field: values.field,
+                skills: values.skills,
+                target_role: values.targetRole,
+                stage: values.stage,
+                goal: values.goal || null,
+            });
+
+            const profile = await fetchProfile();
+            const token = getToken();
+            if (token) {
+                setAuth(token, {
+                    id: profile.id,
+                    full_name: profile.full_name,
+                    email: profile.email,
+                    onboarding_completed: profile.onboarding_completed,
+                });
+            }
+
+            setStep((current) => Math.min(current + 1, steps.length - 1));
+        } catch (err) {
+            setSubmitError(err.message || "We couldn't save your profile. Please try again.");
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
+
     const goNext = () => {
+        if (isSubmitting) return;
+
         const nextErrors = validateStep();
 
         if (Object.keys(nextErrors).length > 0) {
             setErrors(nextErrors);
+            return;
+        }
+
+        if (currentStep === "career") {
+            persistOnboarding();
             return;
         }
 
@@ -417,20 +503,26 @@ const Page = () => {
                                 </div>
                             </div>
 
+                            {submitError ? (
+                                <p className="mt-6 text-xs text-rose-500">{submitError}</p>
+                            ) : null}
+
                             <div className="mt-10 flex items-center justify-between gap-4">
                                 <button
                                     type="button"
                                     onClick={goBack}
-                                    className="inline-flex h-11 items-center justify-center rounded-full border border-slate-200 px-6 text-sm font-semibold text-slate-500 transition hover:border-slate-300 hover:text-slate-800"
+                                    disabled={isSubmitting}
+                                    className="inline-flex h-11 items-center justify-center rounded-full border border-slate-200 px-6 text-sm font-semibold text-slate-500 transition hover:border-slate-300 hover:text-slate-800 disabled:cursor-not-allowed disabled:opacity-60"
                                 >
                                     Back
                                 </button>
                                 <button
                                     type="button"
                                     onClick={goNext}
-                                    className="inline-flex h-11 items-center justify-center rounded-full bg-slate-950 px-7 text-sm font-semibold text-white transition hover:bg-slate-800"
+                                    disabled={isSubmitting}
+                                    className="inline-flex h-11 items-center justify-center rounded-full bg-slate-950 px-7 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60"
                                 >
-                                    Next
+                                    {isSubmitting ? "Saving..." : "Next"}
                                 </button>
                             </div>
                         </div>
