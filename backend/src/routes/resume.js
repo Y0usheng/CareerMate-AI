@@ -74,9 +74,12 @@ router.post('/upload', requireAuth, catchErrors(async (req, res) => {
 
   const userId = req.user.id;
 
+  // Deactivate previous resumes so chat uses only the latest
+  db.prepare('UPDATE resumes SET is_active = 0 WHERE user_id = ?').run(userId);
+
   const result = db.prepare(
-    `INSERT INTO resumes (user_id, filename, stored_filename, file_path, file_size, content_type)
-     VALUES (?, ?, ?, ?, ?, ?)`
+    `INSERT INTO resumes (user_id, filename, stored_filename, file_path, file_size, content_type, is_active)
+     VALUES (?, ?, ?, ?, ?, ?, 1)`
   ).run(userId, req.file.originalname, req.file.filename, req.file.path, req.file.size, req.file.mimetype);
 
   const resume = db.prepare('SELECT * FROM resumes WHERE id = ?').get(result.lastInsertRowid);

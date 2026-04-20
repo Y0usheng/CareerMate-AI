@@ -119,6 +119,13 @@ export function resumeDownloadUrl(id) {
     return `${API_BASE_URL}/resume/${id}/download`;
 }
 
+export async function sendChatMessage(message, history = []) {
+    return apiFetch("/chat", {
+        method: "POST",
+        body: JSON.stringify({ message, history }),
+    });
+}
+
 export async function uploadResume(file) {
     const token = getToken();
     const formData = new FormData();

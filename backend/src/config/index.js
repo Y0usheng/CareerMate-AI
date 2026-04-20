@@ -12,8 +12,9 @@ const config = {
   secretKey: process.env.SECRET_KEY || 'change-this-secret-key-in-production',
   accessTokenExpireMinutes: parseInt(process.env.ACCESS_TOKEN_EXPIRE_MINUTES || '10080', 10), // 7 days
 
-  // Anthropic
-  anthropicApiKey: process.env.ANTHROPIC_API_KEY || '',
+  // Gemini
+  geminiApiKey: process.env.GEMINI_API_KEY || '',
+  geminiModel: process.env.GEMINI_MODEL || 'gemini-2.5-flash',
 
   // File uploads
   uploadDir: process.env.UPLOAD_DIR || 'uploads',

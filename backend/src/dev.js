@@ -11,7 +11,7 @@ require('dotenv').config({ path: path.resolve(__dirname, '../.env') });
 const port     = process.env.PORT            || '8000';
 const dbPath   = process.env.DATABASE_PATH   || './careermate.db';
 const origin   = process.env.FRONTEND_URL    || 'http://localhost:3000';
-const hasApiKey = Boolean(process.env.ANTHROPIC_API_KEY);
+const hasApiKey = Boolean(process.env.GEMINI_API_KEY);
 
 console.log('');
 console.log('  ╔══════════════════════════════════════╗');
@@ -23,7 +23,7 @@ console.log('  ─────────────────────�
 console.log(`  Port          : ${port}`);
 console.log(`  Database      : ${dbPath}`);
 console.log(`  CORS origin   : ${origin}`);
-console.log(`  Anthropic key : ${hasApiKey ? '✓ set' : '✗ NOT SET — AI chat disabled'}`);
+console.log(`  Gemini key    : ${hasApiKey ? '✓ set' : '✗ NOT SET — AI chat disabled'}`);
 console.log(`  Node env      : ${process.env.NODE_ENV || 'development'}`);
 console.log('  ───────────────────────────────────────');
 console.log('');

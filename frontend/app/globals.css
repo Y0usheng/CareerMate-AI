@@ -29,3 +29,63 @@ body {
 html {
   scroll-behavior: smooth;
 }
+
+.prose-chat > * + * { margin-top: 0.6em; }
+.prose-chat h1, .prose-chat h2, .prose-chat h3 {
+  font-weight: 700;
+  color: #0f172a;
+  line-height: 1.3;
+}
+.prose-chat h1 { font-size: 1.1rem; }
+.prose-chat h2 { font-size: 1.02rem; }
+.prose-chat h3 { font-size: 0.95rem; }
+.prose-chat p { margin: 0; }
+.prose-chat strong { font-weight: 600; color: #0f172a; }
+.prose-chat em { font-style: italic; }
+.prose-chat ul, .prose-chat ol { padding-left: 1.25rem; margin: 0.3em 0; }
+.prose-chat ul { list-style: disc; }
+.prose-chat ol { list-style: decimal; }
+.prose-chat li { margin: 0.2em 0; }
+.prose-chat li > p { display: inline; }
+.prose-chat code {
+  background: #f1f5f9;
+  color: #0f172a;
+  padding: 0.1em 0.35em;
+  border-radius: 0.35rem;
+  font-family: var(--font-mono);
+  font-size: 0.88em;
+}
+.prose-chat pre {
+  background: #0f172a;
+  color: #e2e8f0;
+  padding: 0.75rem 0.9rem;
+  border-radius: 0.6rem;
+  overflow-x: auto;
+  font-size: 0.85em;
+  line-height: 1.5;
+}
+.prose-chat pre code {
+  background: transparent;
+  color: inherit;
+  padding: 0;
+  border-radius: 0;
+}
+.prose-chat blockquote {
+  border-left: 3px solid #cbd5e1;
+  padding-left: 0.75rem;
+  color: #475569;
+  font-style: italic;
+}
+.prose-chat a { color: #4f6bff; text-decoration: underline; }
+.prose-chat hr { border: 0; border-top: 1px solid #e2e8f0; margin: 0.6em 0; }
+.prose-chat table {
+  border-collapse: collapse;
+  width: 100%;
+  font-size: 0.88em;
+}
+.prose-chat th, .prose-chat td {
+  border: 1px solid #e2e8f0;
+  padding: 0.35rem 0.55rem;
+  text-align: left;
+}
+.prose-chat th { background: #f8fafc; font-weight: 600; }

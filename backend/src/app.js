@@ -68,7 +68,10 @@ app.use((_req, res) => {
 // Global error handler
 app.use((err, _req, res, _next) => {
   console.error(err.stack);
-  res.status(500).json({ detail: 'Internal server error' });
+  const detail = config.debug || process.env.NODE_ENV !== 'production'
+    ? (err.message || 'Internal server error')
+    : 'Internal server error';
+  res.status(500).json({ detail });
 });
 
 module.exports = app;
