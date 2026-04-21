@@ -1,197 +1,125 @@
 # CareerMate AI — Backend
 
-FastAPI backend for CareerMate AI, providing authentication, user profiles, onboarding, resume management, and AI-powered career coaching chat.
+Express + SQLite API that powers auth, resume storage and Gemini-backed chat for CareerMate AI.
 
-## Tech Stack
+## Tech stack
 
-| Layer | Technology |
-|---|---|
-| Framework | FastAPI |
-| ORM | SQLAlchemy 2.0 |
-| Database | SQLite (dev) / PostgreSQL (prod) |
-| Auth | JWT (python-jose) + bcrypt (passlib) |
-| AI | Anthropic Claude (claude-sonnet-4-6) |
-| Validation | Pydantic v2 |
+| Layer        | Technology                                      |
+|--------------|-------------------------------------------------|
+| Runtime      | Node.js ≥ 18                                    |
+| Framework    | Express 4                                       |
+| Database     | SQLite via `better-sqlite3`                     |
+| Auth         | JWT (`jsonwebtoken`) + `bcryptjs`               |
+| Validation   | `express-validator`                             |
+| AI           | Google Gemini (`@google/genai`)                 |
+| File parsing | Native PDF (sent inline to Gemini) · `mammoth` for DOCX |
+| Uploads      | `multer` disk storage                           |
+| Docs         | `swagger-ui-express` at `/docs`                 |
 
-## Project Structure
+## Project structure
 
 ```
 backend/
-├── app/
-│   ├── main.py            # FastAPI app, CORS, router registration
-│   ├── config.py          # Settings (pydantic-settings + .env)
-│   ├── database.py        # SQLAlchemy engine & session
-│   ├── core/
-│   │   ├── security.py    # JWT creation/decode, password hashing
-│   │   └── deps.py        # get_current_user dependency
-│   ├── models/            # SQLAlchemy ORM models
-│   │   ├── user.py
-│   │   ├── onboarding.py
-│   │   ├── resume.py
-│   │   ├── contact.py
-│   │   └── password_reset.py
-│   ├── schemas/           # Pydantic request/response schemas
-│   │   ├── auth.py
-│   │   ├── user.py
-│   │   ├── onboarding.py
-│   │   ├── resume.py
-│   │   ├── chat.py
-│   │   └── contact.py
-│   └── routers/           # Route handlers
-│       ├── auth.py
-│       ├── user.py
-│       ├── onboarding.py
-│       ├── resume.py
-│       ├── chat.py
-│       └── contact.py
-├── uploads/               # Uploaded resume files (git-ignored)
-├── requirements.txt
-├── .env.example
-└── README.md
+├── src/
+│   ├── app.js                # Express app, CORS, routers, error handler
+│   ├── server.js             # HTTP listener
+│   ├── dev.js                # Interactive dev launcher
+│   ├── config/index.js       # Env-driven config
+│   ├── database/index.js     # SQLite connection + schema migrations
+│   ├── errors.js             # Typed error classes
+│   ├── helpers.js            # catchErrors, validate
+│   ├── middleware/auth.js    # requireAuth (JWT → req.user)
+│   ├── lib/mailer.js         # Password-reset code delivery (dev = console)
+│   └── routes/
+│       ├── auth.js           # register, login, forgot/verify/reset-password
+│       ├── user.js           # profile, career, password update
+│       ├── onboarding.js     # first-run profile capture
+│       ├── resume.js         # upload / list / download / delete
+│       ├── chat.js           # Gemini chat with resume as inline part
+│       └── contact.js        # contact form
+├── swagger.json              # OpenAPI spec served at /docs
+├── uploads/                  # user-uploaded files (gitignored)
+├── careermate.db             # SQLite file (gitignored)
+└── .env                      # secrets (gitignored; see .env.example)
 ```
 
-## Quick Start
-
-### 1. Create virtual environment
+## Getting started
 
 ```bash
-cd backend
-python -m venv venv
-# Windows
-venv\Scripts\activate
-# macOS / Linux
-source venv/bin/activate
+npm install
+cp .env.example .env     # then edit values
+npm run dev              # interactive launcher + nodemon
 ```
 
-### 2. Install dependencies
+Required env vars:
 
-```bash
-pip install -r requirements.txt
+```dotenv
+PORT=8000
+DATABASE_PATH=./careermate.db
+SECRET_KEY=change-this-to-a-long-random-string
+ACCESS_TOKEN_EXPIRE_MINUTES=10080
+GEMINI_API_KEY=your_key_here
+GEMINI_MODEL=gemini-2.5-flash
+UPLOAD_DIR=uploads
+MAX_UPLOAD_SIZE_MB=10
+FRONTEND_URL=http://localhost:3000
 ```
 
-### 3. Configure environment
+After `npm run dev` the API is at `http://localhost:8000` and Swagger UI at `http://localhost:8000/docs`.
 
-```bash
-cp .env.example .env
-# Edit .env and set your ANTHROPIC_API_KEY and SECRET_KEY
-```
+## Scripts
 
-### 4. Run the server
+| Command        | What it does                            |
+|----------------|-----------------------------------------|
+| `npm run dev`  | Interactive launcher, then nodemon      |
+| `npm start`    | Production start (`node src/server.js`) |
 
-```bash
-uvicorn app.main:app --reload --port 8000
-```
+## API overview
 
-The API will be available at `http://localhost:8000`.
-Interactive docs: `http://localhost:8000/docs`
+All routes are prefixed with `/api`.
 
----
+| Method | Path                          | Auth | Purpose                                |
+|--------|-------------------------------|------|----------------------------------------|
+| POST   | `/auth/register`              | —    | Create account                         |
+| POST   | `/auth/login`                 | —    | Email + password → JWT                 |
+| POST   | `/auth/forgot-password`       | —    | Generate + deliver 4-digit reset code  |
+| POST   | `/auth/verify-code`           | —    | Validate code without consuming it     |
+| POST   | `/auth/reset-password`        | —    | Consume code, set new password         |
+| GET    | `/user/profile`               | JWT  | Current user                           |
+| PUT    | `/user/profile`               | JWT  | Update name / email / field            |
+| PUT    | `/user/career`                | JWT  | Update career goal / stage / skills    |
+| PUT    | `/user/password`              | JWT  | Change password (requires current)     |
+| GET    | `/onboarding`                 | JWT  | Get onboarding state                   |
+| POST   | `/onboarding`                 | JWT  | Submit onboarding answers              |
+| POST   | `/resume/upload`              | JWT  | Upload PDF / DOC / DOCX (≤10MB)        |
+| GET    | `/resume`                     | JWT  | List uploaded resumes                  |
+| GET    | `/resume/:id/download`        | JWT  | Stream original file                   |
+| DELETE | `/resume/:id`                 | JWT  | Delete resume + file                   |
+| POST   | `/chat`                       | JWT  | Gemini turn with latest resume inlined |
+| POST   | `/contact`                    | —    | Contact form submissions               |
 
-## API Endpoints
+## AI chat flow
 
-### Auth — `/api/auth`
+1. `/api/chat` loads the user's active resume row (`is_active = 1`).
+2. **PDF** → base64-encoded `inlineData` part so Gemini reads the real document (layout, dates, headings). **DOCX** → text extracted with `mammoth` and wrapped as a text part. `.doc` is not supported.
+3. A system prompt injects the user's onboarding context (career goal, stage, skills).
+4. Model chain: `config.geminiModel` → `gemini-2.0-flash` → `gemini-flash-latest`, with up to 3 retries and exponential backoff on `503 / 429 / UNAVAILABLE`.
 
-| Method | Path | Description | Auth Required |
-|--------|------|-------------|---------------|
-| POST | `/api/auth/register` | Create account | No |
-| POST | `/api/auth/login` | Login, get JWT | No |
-| POST | `/api/auth/forgot-password` | Request reset code | No |
-| POST | `/api/auth/verify-code` | Verify 4-digit code | No |
-| POST | `/api/auth/reset-password` | Set new password | No |
+## Password reset — dev mode
 
-### User — `/api/user`
-
-| Method | Path | Description | Auth Required |
-|--------|------|-------------|---------------|
-| GET | `/api/user/profile` | Get current user | Yes |
-| PUT | `/api/user/profile` | Update basic info | Yes |
-| PUT | `/api/user/career` | Update career settings | Yes |
-| PUT | `/api/user/password` | Change password | Yes |
-
-### Onboarding — `/api/onboarding`
-
-| Method | Path | Description | Auth Required |
-|--------|------|-------------|---------------|
-| POST | `/api/onboarding` | Save onboarding data | Yes |
-| GET | `/api/onboarding` | Get onboarding data | Yes |
-
-### Resume — `/api/resume`
-
-| Method | Path | Description | Auth Required |
-|--------|------|-------------|---------------|
-| POST | `/api/resume/upload` | Upload PDF/DOC/DOCX | Yes |
-| GET | `/api/resume` | Get active resume info | Yes |
-| DELETE | `/api/resume` | Delete active resume | Yes |
-
-### Chat — `/api/chat`
-
-| Method | Path | Description | Auth Required |
-|--------|------|-------------|---------------|
-| POST | `/api/chat` | Send message, get AI reply | Yes |
-
-**Request body:**
-```json
-{
-  "message": "Summarize my resume and suggest three improvements.",
-  "history": [
-    { "role": "user", "text": "..." },
-    { "role": "assistant", "text": "..." }
-  ]
-}
-```
-
-### Contact — `/api/contact`
-
-| Method | Path | Description | Auth Required |
-|--------|------|-------------|---------------|
-| POST | `/api/contact` | Submit contact form | No |
-
----
-
-## Authentication
-
-All protected endpoints expect a Bearer token in the `Authorization` header:
+When SMTP is not configured, codes are printed to the server console instead of emailed:
 
 ```
-Authorization: Bearer <access_token>
+┌─────────────────────────────────────────┐
+│  Password reset code (dev — no email)   │
+├─────────────────────────────────────────┤
+│  To   : user@example.com                │
+│  Code : 4823                            │
+└─────────────────────────────────────────┘
 ```
 
-The token is returned by `/api/auth/login` and `/api/auth/register`.
+To deliver real email, reintroduce `nodemailer` (or a provider like Resend) inside `src/lib/mailer.js` and fill the matching SMTP env vars.
 
----
+## Database
 
-## Frontend Integration
-
-Add this to your frontend `.env.local`:
-
-```env
-NEXT_PUBLIC_API_URL=http://localhost:8000
-```
-
-Then make API calls:
-
-```js
-// Register
-const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/auth/register`, {
-  method: "POST",
-  headers: { "Content-Type": "application/json" },
-  body: JSON.stringify({ full_name, email, password }),
-});
-const data = await res.json();
-// data.access_token  ← store this
-
-// Authenticated request
-const profile = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/user/profile`, {
-  headers: { Authorization: `Bearer ${token}` },
-});
-```
-
----
-
-## Password Reset Flow
-
-1. `POST /api/auth/forgot-password` with `{ email }` → code logged to console in dev
-2. `POST /api/auth/verify-code` with `{ email, code }` → validates code
-3. `POST /api/auth/reset-password` with `{ email, code, password, confirm_password }` → updates password
-
-> In production, replace the `print()` in `routers/auth.py` with an email service (e.g. SendGrid, Resend).
+Schema and lightweight migrations live in `src/database/index.js` — on import, the module connects to `config.databasePath` and ensures all tables exist. Tables: `users`, `onboarding`, `resumes`, `password_reset_codes`, `contact_messages`.
