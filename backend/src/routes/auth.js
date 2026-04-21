@@ -6,6 +6,7 @@ const db = require('../database');
 const config = require('../config');
 const { catchErrors, validate } = require('../helpers');
 const { ConflictError, AccessError, InputError, NotFoundError } = require('../errors');
+const { sendResetCodeEmail } = require('../lib/mailer');
 
 const router = express.Router();
 
@@ -88,8 +89,11 @@ router.post(
       db.prepare('UPDATE password_reset_codes SET is_used = 1 WHERE email = ? AND is_used = 0').run(email);
       db.prepare('INSERT INTO password_reset_codes (email, code, expires_at) VALUES (?, ?, ?)').run(email, code, expiresAt);
 
-      // In production, send via email. For dev, log to console.
-      console.log(`[DEV] Password reset code for ${email}: ${code}`);
+      try {
+        await sendResetCodeEmail(email, code);
+      } catch (err) {
+        console.error('Failed to send reset email:', err.message);
+      }
     }
 
     // Always 200 to prevent email enumeration

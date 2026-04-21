@@ -119,6 +119,27 @@ export function resumeDownloadUrl(id) {
     return `${API_BASE_URL}/resume/${id}/download`;
 }
 
+export async function requestPasswordResetCode(email) {
+    return apiFetch("/auth/forgot-password", {
+        method: "POST",
+        body: JSON.stringify({ email }),
+    });
+}
+
+export async function verifyPasswordResetCode(email, code) {
+    return apiFetch("/auth/verify-code", {
+        method: "POST",
+        body: JSON.stringify({ email, code }),
+    });
+}
+
+export async function resetPassword(email, code, password, confirmPassword) {
+    return apiFetch("/auth/reset-password", {
+        method: "POST",
+        body: JSON.stringify({ email, code, password, confirm_password: confirmPassword }),
+    });
+}
+
 export async function sendChatMessage(message, history = []) {
     return apiFetch("/chat", {
         method: "POST",

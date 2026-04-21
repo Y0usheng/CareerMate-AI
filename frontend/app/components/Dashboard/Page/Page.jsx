@@ -393,6 +393,43 @@ const Page = () => {
                             })
                         )}
                     </div>
+
+                    <nav className="mt-3 flex flex-col gap-0.5 border-t border-slate-100 pt-3">
+                        {navItems.map((item) => {
+                            const active = item.label === "Home";
+                            return (
+                                <Link
+                                    key={item.label}
+                                    href={item.href}
+                                    className={`flex items-center gap-3 rounded-xl px-3 py-2 text-sm transition ${
+                                        active
+                                            ? "bg-slate-100 font-semibold text-slate-900"
+                                            : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
+                                    }`}
+                                >
+                                    <svg
+                                        className="h-4 w-4 shrink-0 text-slate-500"
+                                        viewBox="0 0 20 20"
+                                        fill="currentColor"
+                                        aria-hidden="true"
+                                    >
+                                        {item.label === "Home" ? (
+                                            <path d="M10 2.5a1 1 0 01.7.29l7 6.5a1 1 0 01-.7 1.71H16v6a1 1 0 01-1 1h-3v-5H8v5H5a1 1 0 01-1-1v-6H3a1 1 0 01-.7-1.71l7-6.5A1 1 0 0110 2.5z" />
+                                        ) : item.label === "Resume" ? (
+                                            <path d="M6 2a2 2 0 00-2 2v12a2 2 0 002 2h8a2 2 0 002-2V7.41a2 2 0 00-.59-1.41l-3.41-3.41A2 2 0 0010.59 2H6zm1 7a1 1 0 011-1h4a1 1 0 110 2H8a1 1 0 01-1-1zm0 3a1 1 0 011-1h4a1 1 0 110 2H8a1 1 0 01-1-1zm0 3a1 1 0 011-1h2a1 1 0 110 2H8a1 1 0 01-1-1z" />
+                                        ) : (
+                                            <path
+                                                fillRule="evenodd"
+                                                d="M11.49 2.17a1 1 0 00-1.98 0l-.17 1.04a6.9 6.9 0 00-1.7.7l-.87-.61a1 1 0 00-1.4 1.4l.6.87a6.9 6.9 0 00-.7 1.7l-1.04.17a1 1 0 000 1.98l1.04.17a6.9 6.9 0 00.7 1.7l-.6.87a1 1 0 001.4 1.4l.87-.6a6.9 6.9 0 001.7.7l.17 1.04a1 1 0 001.98 0l.17-1.04a6.9 6.9 0 001.7-.7l.87.6a1 1 0 001.4-1.4l-.6-.87a6.9 6.9 0 00.7-1.7l1.04-.17a1 1 0 000-1.98l-1.04-.17a6.9 6.9 0 00-.7-1.7l.6-.87a1 1 0 00-1.4-1.4l-.87.6a6.9 6.9 0 00-1.7-.7l-.17-1.04zM10 12.5a2.5 2.5 0 100-5 2.5 2.5 0 000 5z"
+                                                clipRule="evenodd"
+                                            />
+                                        )}
+                                    </svg>
+                                    {item.label}
+                                </Link>
+                            );
+                        })}
+                    </nav>
                 </aside>
 
                 {/* Main */}
@@ -455,22 +492,6 @@ const Page = () => {
                                             <p className="truncate text-xs text-slate-500">{displayEmail}</p>
                                         ) : null}
                                     </div>
-                                    {navItems.map((item) => (
-                                        <Link
-                                            key={item.label}
-                                            href={item.href}
-                                            onClick={() => setAccountMenuOpen(false)}
-                                            className="flex items-center gap-3 px-4 py-3 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
-                                            role="menuitem"
-                                        >
-                                            <span
-                                                className={`size-1.5 rounded-full ${
-                                                    item.label === "Home" ? "bg-[#4f6bff]" : "bg-slate-300"
-                                                }`}
-                                            />
-                                            {item.label}
-                                        </Link>
-                                    ))}
                                     <button
                                         type="button"
                                         onClick={handleLogout}

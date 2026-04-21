@@ -203,8 +203,8 @@ const Page = () => {
                 onLogout={handleLogout}
             />
             <div className="mx-auto flex min-h-screen max-w-[1600px] flex-col lg:flex-row">
-                <aside className="hidden w-[220px] flex-col border-r border-slate-100 bg-slate-50/60 px-5 py-6 lg:flex">
-                    <Link href="/" className="inline-flex items-center gap-2.5">
+                <aside className="hidden w-[280px] shrink-0 flex-col border-r border-slate-200 bg-white px-4 py-5 lg:flex">
+                    <Link href="/" className="inline-flex items-center gap-2.5 px-2">
                         <Image src="/landing/13.svg" alt="CareerMate AI logo" width={28} height={28} priority />
                         <Image
                             src="/landing/career-mate-ai-2.svg"
@@ -216,35 +216,71 @@ const Page = () => {
                         />
                     </Link>
 
-                    <nav className="mt-10 flex flex-col gap-1">
+                    <div className="flex-1" />
+
+                    <nav className="flex flex-col gap-0.5 border-t border-slate-100 pt-3">
                         {navItems.map((item) => {
                             const active = item.label === "Resume";
                             return (
                                 <Link
                                     key={item.label}
                                     href={item.href}
-                                    className={`flex w-full items-center gap-2.5 rounded-xl px-3 py-2.5 text-sm transition ${
+                                    className={`flex items-center gap-3 rounded-xl px-3 py-2 text-sm transition ${
                                         active
-                                            ? "bg-white font-semibold text-[#4f6bff] shadow-[0_4px_12px_rgba(79,107,255,0.08)]"
-                                            : "text-slate-500 hover:bg-white hover:text-slate-900"
+                                            ? "bg-slate-100 font-semibold text-slate-900"
+                                            : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
                                     }`}
                                 >
-                                    <span
-                                        className={`size-1.5 rounded-full ${active ? "bg-[#4f6bff]" : "bg-slate-300"}`}
-                                    />
+                                    <svg
+                                        className="h-4 w-4 shrink-0 text-slate-500"
+                                        viewBox="0 0 20 20"
+                                        fill="currentColor"
+                                        aria-hidden="true"
+                                    >
+                                        {item.label === "Home" ? (
+                                            <path d="M10 2.5a1 1 0 01.7.29l7 6.5a1 1 0 01-.7 1.71H16v6a1 1 0 01-1 1h-3v-5H8v5H5a1 1 0 01-1-1v-6H3a1 1 0 01-.7-1.71l7-6.5A1 1 0 0110 2.5z" />
+                                        ) : item.label === "Resume" ? (
+                                            <path d="M6 2a2 2 0 00-2 2v12a2 2 0 002 2h8a2 2 0 002-2V7.41a2 2 0 00-.59-1.41l-3.41-3.41A2 2 0 0010.59 2H6zm1 7a1 1 0 011-1h4a1 1 0 110 2H8a1 1 0 01-1-1zm0 3a1 1 0 011-1h4a1 1 0 110 2H8a1 1 0 01-1-1zm0 3a1 1 0 011-1h2a1 1 0 110 2H8a1 1 0 01-1-1z" />
+                                        ) : (
+                                            <path
+                                                fillRule="evenodd"
+                                                d="M11.49 2.17a1 1 0 00-1.98 0l-.17 1.04a6.9 6.9 0 00-1.7.7l-.87-.61a1 1 0 00-1.4 1.4l.6.87a6.9 6.9 0 00-.7 1.7l-1.04.17a1 1 0 000 1.98l1.04.17a6.9 6.9 0 00.7 1.7l-.6.87a1 1 0 001.4 1.4l.87-.6a6.9 6.9 0 001.7.7l.17 1.04a1 1 0 001.98 0l.17-1.04a6.9 6.9 0 001.7-.7l.87.6a1 1 0 001.4-1.4l-.6-.87a6.9 6.9 0 00.7-1.7l1.04-.17a1 1 0 000-1.98l-1.04-.17a6.9 6.9 0 00-.7-1.7l.6-.87a1 1 0 00-1.4-1.4l-.87.6a6.9 6.9 0 00-1.7-.7l-.17-1.04zM10 12.5a2.5 2.5 0 100-5 2.5 2.5 0 000 5z"
+                                                clipRule="evenodd"
+                                            />
+                                        )}
+                                    </svg>
                                     {item.label}
                                 </Link>
                             );
                         })}
                     </nav>
 
-                    <button
-                        type="button"
-                        onClick={handleLogout}
-                        className="mt-auto inline-flex items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-xs font-semibold text-slate-500 transition hover:border-slate-300 hover:text-slate-900"
-                    >
-                        Log out
-                    </button>
+                    <div className="mt-3 flex items-center gap-2.5 rounded-xl border border-slate-100 bg-slate-50/60 px-2.5 py-2">
+                        <div className="flex size-8 items-center justify-center rounded-full bg-slate-900 text-xs font-bold text-white">
+                            {initial}
+                        </div>
+                        <div className="min-w-0 flex-1">
+                            <p className="truncate text-xs font-semibold text-slate-900">
+                                {displayName || "—"}
+                            </p>
+                            <p className="truncate text-[11px] text-slate-500">{displayEmail || ""}</p>
+                        </div>
+                        <button
+                            type="button"
+                            onClick={handleLogout}
+                            title="Log out"
+                            aria-label="Log out"
+                            className="flex size-7 shrink-0 items-center justify-center rounded-lg text-slate-400 transition hover:bg-rose-50 hover:text-rose-500"
+                        >
+                            <svg className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                                <path
+                                    fillRule="evenodd"
+                                    d="M3 4.75A2.75 2.75 0 015.75 2h4.5a.75.75 0 010 1.5h-4.5c-.69 0-1.25.56-1.25 1.25v10.5c0 .69.56 1.25 1.25 1.25h4.5a.75.75 0 010 1.5h-4.5A2.75 2.75 0 013 15.25V4.75zm10.47 2.22a.75.75 0 011.06 0l2.5 2.5a.75.75 0 010 1.06l-2.5 2.5a.75.75 0 11-1.06-1.06L14.69 10.5H8.75a.75.75 0 010-1.5h5.94l-1.22-1.22a.75.75 0 010-1.06z"
+                                    clipRule="evenodd"
+                                />
+                            </svg>
+                        </button>
+                    </div>
                 </aside>
 
                 <main className="flex flex-1 flex-col px-4 py-5 sm:px-6 lg:px-10">
@@ -284,7 +320,7 @@ const Page = () => {
                                     type="button"
                                     onClick={handlePickFile}
                                     disabled={uploading}
-                                    className="inline-flex h-11 items-center justify-center gap-2 rounded-full bg-[linear-gradient(98deg,#504ffd_12%,#40c3fb_91%)] px-6 text-sm font-bold text-white shadow-[0_10px_24px_rgba(79,107,255,0.25)] transition hover:brightness-105 disabled:cursor-not-allowed disabled:opacity-60"
+                                    className="inline-flex h-11 items-center justify-center gap-2 rounded-full bg-slate-900 px-6 text-sm font-bold text-white shadow-sm transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60"
                                 >
                                     <span className="text-base leading-none">+</span>
                                     {uploading ? "Uploading..." : "Upload Resume"}
@@ -439,7 +475,7 @@ const EmptyState = ({ hasQuery, onUpload, uploading }) => (
                 type="button"
                 onClick={onUpload}
                 disabled={uploading}
-                className="mt-6 inline-flex h-11 items-center justify-center gap-2 rounded-full bg-[linear-gradient(98deg,#504ffd_12%,#40c3fb_91%)] px-6 text-sm font-bold text-white transition hover:brightness-105 disabled:cursor-not-allowed disabled:opacity-60"
+                className="mt-6 inline-flex h-11 items-center justify-center gap-2 rounded-full bg-slate-900 px-6 text-sm font-bold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60"
             >
                 <span className="text-base leading-none">+</span>
                 {uploading ? "Uploading..." : "Upload Resume"}

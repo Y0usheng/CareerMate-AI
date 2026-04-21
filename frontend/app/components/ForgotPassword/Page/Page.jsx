@@ -3,6 +3,12 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useMemo, useRef, useState } from "react";
+import {
+    requestPasswordResetCode,
+    resetPassword,
+    verifyPasswordResetCode,
+} from "../../../lib/api";
+import PasswordInput from "../../Shared/PasswordInput";
 
 const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -12,6 +18,7 @@ const Page = () => {
     const [code, setCode] = useState(["", "", "", ""]);
     const [passwords, setPasswords] = useState({ password: "", confirmPassword: "" });
     const [errors, setErrors] = useState({});
+    const [submitting, setSubmitting] = useState(false);
     const codeRefs = useRef([]);
 
     const title = useMemo(() => {
@@ -28,7 +35,7 @@ const Page = () => {
         return "Your password has been updated successfully.";
     }, [step]);
 
-    const handleEmailSubmit = () => {
+    const handleEmailSubmit = async () => {
         if (!email.trim()) {
             setErrors({ email: "Please enter your email." });
             return;
@@ -40,7 +47,15 @@ const Page = () => {
         }
 
         setErrors({});
-        setStep(1);
+        setSubmitting(true);
+        try {
+            await requestPasswordResetCode(email.trim());
+            setStep(1);
+        } catch (err) {
+            setErrors({ email: err.message || "Failed to send code. Please try again." });
+        } finally {
+            setSubmitting(false);
+        }
     };
 
     const handleCodeChange = (index, value) => {
@@ -55,7 +70,7 @@ const Page = () => {
         }
     };
 
-    const handleCodeSubmit = () => {
+    const handleCodeSubmit = async () => {
         const joined = code.join("");
 
         if (joined.length !== 4) {
@@ -63,13 +78,16 @@ const Page = () => {
             return;
         }
 
-        if (joined !== "1234") {
-            setErrors({ code: "Invalid verification code. Try 1234 for this demo flow." });
-            return;
-        }
-
         setErrors({});
-        setStep(2);
+        setSubmitting(true);
+        try {
+            await verifyPasswordResetCode(email.trim(), joined);
+            setStep(2);
+        } catch (err) {
+            setErrors({ code: err.message || "Invalid or expired code." });
+        } finally {
+            setSubmitting(false);
+        }
     };
 
     const handlePasswordChange = (event) => {
@@ -78,7 +96,7 @@ const Page = () => {
         setErrors((current) => ({ ...current, [name]: "" }));
     };
 
-    const handleResetSubmit = () => {
+    const handleResetSubmit = async () => {
         const nextErrors = {};
 
         if (!passwords.password) {
@@ -99,7 +117,20 @@ const Page = () => {
         }
 
         setErrors({});
-        setStep(3);
+        setSubmitting(true);
+        try {
+            await resetPassword(
+                email.trim(),
+                code.join(""),
+                passwords.password,
+                passwords.confirmPassword
+            );
+            setStep(3);
+        } catch (err) {
+            setErrors({ confirmPassword: err.message || "Failed to reset password." });
+        } finally {
+            setSubmitting(false);
+        }
     };
 
     const inputClassName = (name) =>
@@ -180,9 +211,10 @@ const Page = () => {
                                         <button
                                             type="button"
                                             onClick={handleEmailSubmit}
-                                            className="inline-flex h-11 w-full items-center justify-center rounded-full bg-[linear-gradient(98deg,#504ffd_12%,#40c3fb_91%)] text-sm font-bold text-white transition hover:brightness-105"
+                                            disabled={submitting}
+                                            className="inline-flex h-11 w-full items-center justify-center rounded-full bg-[linear-gradient(98deg,#504ffd_12%,#40c3fb_91%)] text-sm font-bold text-white transition hover:brightness-105 disabled:cursor-not-allowed disabled:opacity-60"
                                         >
-                                            Send
+                                            {submitting ? "Sending..." : "Send code"}
                                         </button>
                                     </div>
                                 ) : null}
@@ -213,9 +245,10 @@ const Page = () => {
                                         <button
                                             type="button"
                                             onClick={handleCodeSubmit}
-                                            className="mt-6 inline-flex h-11 w-full items-center justify-center rounded-full bg-[linear-gradient(98deg,#504ffd_12%,#40c3fb_91%)] text-sm font-bold text-white transition hover:brightness-105"
+                                            disabled={submitting}
+                                            className="mt-6 inline-flex h-11 w-full items-center justify-center rounded-full bg-[linear-gradient(98deg,#504ffd_12%,#40c3fb_91%)] text-sm font-bold text-white transition hover:brightness-105 disabled:cursor-not-allowed disabled:opacity-60"
                                         >
-                                            Verify code
+                                            {submitting ? "Verifying..." : "Verify code"}
                                         </button>
 
                                         <button
@@ -234,14 +267,13 @@ const Page = () => {
                                             <label htmlFor="password" className="mb-2 block text-xs font-medium text-slate-500">
                                                 New Password
                                             </label>
-                                            <input
+                                            <PasswordInput
                                                 id="password"
                                                 name="password"
-                                                type="password"
                                                 value={passwords.password}
                                                 onChange={handlePasswordChange}
                                                 placeholder="Create a password"
-                                                className={inputClassName("password")}
+                                                inputClassName={inputClassName("password")}
                                             />
                                             {errors.password ? (
                                                 <p className="mt-2 text-xs text-rose-500">{errors.password}</p>
@@ -252,14 +284,13 @@ const Page = () => {
                                             <label htmlFor="confirmPassword" className="mb-2 block text-xs font-medium text-slate-500">
                                                 Confirm Password
                                             </label>
-                                            <input
+                                            <PasswordInput
                                                 id="confirmPassword"
                                                 name="confirmPassword"
-                                                type="password"
                                                 value={passwords.confirmPassword}
                                                 onChange={handlePasswordChange}
                                                 placeholder="Confirm your password"
-                                                className={inputClassName("confirmPassword")}
+                                                inputClassName={inputClassName("confirmPassword")}
                                             />
                                             {errors.confirmPassword ? (
                                                 <p className="mt-2 text-xs text-rose-500">{errors.confirmPassword}</p>
@@ -269,9 +300,10 @@ const Page = () => {
                                         <button
                                             type="button"
                                             onClick={handleResetSubmit}
-                                            className="inline-flex h-11 w-full items-center justify-center rounded-full bg-[linear-gradient(98deg,#504ffd_12%,#40c3fb_91%)] text-sm font-bold text-white transition hover:brightness-105"
+                                            disabled={submitting}
+                                            className="inline-flex h-11 w-full items-center justify-center rounded-full bg-[linear-gradient(98deg,#504ffd_12%,#40c3fb_91%)] text-sm font-bold text-white transition hover:brightness-105 disabled:cursor-not-allowed disabled:opacity-60"
                                         >
-                                            Reset password
+                                            {submitting ? "Saving..." : "Reset password"}
                                         </button>
                                     </div>
                                 ) : null}
