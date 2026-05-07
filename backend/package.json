@@ -7,6 +7,9 @@
     "start": "node src/server.js",
     "dev": "node src/dev.js"
   },
+  "engines": {
+    "node": "22.x"
+  },
   "keywords": [],
   "author": "",
   "license": "ISC",
