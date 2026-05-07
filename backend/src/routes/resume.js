@@ -1,10 +1,10 @@
 const express = require('express');
 const multer = require('multer');
 const path = require('path');
-const fs = require('fs');
-const { v4: uuidv4 } = require('uuid');
+const { Readable } = require('stream');
+const { ObjectId } = require('mongodb');
 const { requireAuth } = require('../middleware/auth');
-const db = require('../database');
+const { collections, getBucket } = require('../database');
 const config = require('../config');
 const { catchErrors } = require('../helpers');
 const { InputError, NotFoundError } = require('../errors');
@@ -15,22 +15,10 @@ const router = express.Router();
 const ALLOWED_EXTENSIONS = ['.pdf', '.doc', '.docx'];
 const MAX_SIZE_BYTES = config.maxUploadSizeMb * 1024 * 1024;
 
-// Ensure upload directory exists
-const uploadDir = path.resolve(process.cwd(), config.uploadDir);
-if (!fs.existsSync(uploadDir)) {
-  fs.mkdirSync(uploadDir, { recursive: true });
-}
-
-const storage = multer.diskStorage({
-  destination: (_req, _file, cb) => cb(null, uploadDir),
-  filename: (_req, file, cb) => {
-    const ext = path.extname(file.originalname).toLowerCase();
-    cb(null, `${uuidv4()}${ext}`);
-  },
-});
-
+// In-memory storage — file goes straight from request body to GridFS, never
+// touching the host disk (Render free tier has no persistent disk anyway).
 const upload = multer({
-  storage,
+  storage: multer.memoryStorage(),
   limits: { fileSize: MAX_SIZE_BYTES },
   fileFilter: (_req, file, cb) => {
     const ext = path.extname(file.originalname).toLowerCase();
@@ -43,7 +31,7 @@ const upload = multer({
 
 function formatResume(r) {
   return {
-    id: r.id,
+    id: String(r._id),
     filename: r.filename,
     file_size: r.file_size,
     content_type: r.content_type,
@@ -51,7 +39,6 @@ function formatResume(r) {
   };
 }
 
-/** Wraps multer's callback-style middleware in a Promise so catchErrors can handle it. */
 const runUpload = (req, res) =>
   new Promise((resolve, reject) => {
     upload.single('file')(req, res, (err) => {
@@ -59,6 +46,30 @@ const runUpload = (req, res) =>
       else resolve();
     });
   });
+
+// Stream a buffer into GridFS, returning the new file's ObjectId.
+function uploadBufferToGridFS(buffer, filename, contentType) {
+  return new Promise((resolve, reject) => {
+    const bucket = getBucket();
+    const stream = bucket.openUploadStream(filename, {
+      contentType,
+    });
+    stream.on('error', reject);
+    stream.on('finish', () => resolve(stream.id));
+    Readable.from(buffer).pipe(stream);
+  });
+}
+
+async function deleteGridFSFile(fileId) {
+  if (!fileId) return;
+  try {
+    await getBucket().delete(fileId);
+  } catch (err) {
+    if (err?.code !== 'ENOENT' && !/FileNotFound/i.test(err?.message || '')) {
+      console.warn('GridFS delete failed:', err.message);
+    }
+  }
+}
 
 // POST /api/resume/upload
 router.post('/upload', requireAuth, catchErrors(async (req, res) => {
@@ -73,27 +84,39 @@ router.post('/upload', requireAuth, catchErrors(async (req, res) => {
 
   if (!req.file) throw new InputError('No file uploaded');
 
-  const userId = req.user.id;
+  const userId = req.user._id;
+  const resumes = collections.resumes();
 
-  // Deactivate previous resumes so chat uses only the latest
-  db.prepare('UPDATE resumes SET is_active = 0 WHERE user_id = ?').run(userId);
+  // Push file to GridFS first so we have the file_id ready for the resume row.
+  const fileId = await uploadBufferToGridFS(
+    req.file.buffer,
+    req.file.originalname,
+    req.file.mimetype
+  );
 
-  const result = db.prepare(
-    `INSERT INTO resumes (user_id, filename, stored_filename, file_path, file_size, content_type, is_active)
-     VALUES (?, ?, ?, ?, ?, ?, 1)`
-  ).run(userId, req.file.originalname, req.file.filename, req.file.path, req.file.size, req.file.mimetype);
+  // Deactivate previous resumes so chat uses only the latest.
+  await resumes.updateMany({ user_id: userId }, { $set: { is_active: false } });
 
-  const resume = db.prepare('SELECT * FROM resumes WHERE id = ?').get(result.lastInsertRowid);
+  const now = new Date();
+  const doc = {
+    user_id: userId,
+    filename: req.file.originalname,
+    file_id: fileId,
+    file_size: req.file.size,
+    content_type: req.file.mimetype,
+    is_active: true,
+    created_at: now,
+  };
+  const insertResult = await resumes.insertOne(doc);
+  const resume = { ...doc, _id: insertResult.insertedId };
 
-  // Synchronous indexing — chat retrieval needs chunks ready on the very
-  // next turn. Failure here must not break the upload itself, so we log and
-  // continue (chat still has the inline-PDF fallback path).
+  // Synchronous indexing — chat retrieval needs chunks ready next turn.
   let indexed = { chunks: 0 };
   try {
     indexed = await indexResume({
-      resumeId: resume.id,
+      resumeId: resume._id,
       userId,
-      filePath: resume.file_path,
+      buffer: req.file.buffer,
       filename: resume.filename,
     });
   } catch (err) {
@@ -105,39 +128,47 @@ router.post('/upload', requireAuth, catchErrors(async (req, res) => {
 
 // GET /api/resume — list all resumes for the current user
 router.get('/', requireAuth, catchErrors(async (req, res) => {
-  const resumes = db
-    .prepare('SELECT * FROM resumes WHERE user_id = ? ORDER BY created_at DESC')
-    .all(req.user.id);
-  return res.json(resumes.map(formatResume));
+  const rows = await collections
+    .resumes()
+    .find({ user_id: req.user._id })
+    .sort({ created_at: -1 })
+    .toArray();
+  return res.json(rows.map(formatResume));
 }));
+
+function parseObjectIdParam(value) {
+  try {
+    return new ObjectId(String(value));
+  } catch {
+    throw new NotFoundError('Resume not found');
+  }
+}
 
 // GET /api/resume/:id/download
 router.get('/:id/download', requireAuth, catchErrors(async (req, res) => {
-  const resume = db
-    .prepare('SELECT * FROM resumes WHERE id = ? AND user_id = ?')
-    .get(Number(req.params.id), req.user.id);
-
+  const _id = parseObjectIdParam(req.params.id);
+  const resume = await collections.resumes().findOne({ _id, user_id: req.user._id });
   if (!resume) throw new NotFoundError('Resume not found');
-  if (!fs.existsSync(resume.file_path)) throw new NotFoundError('File missing on server');
+  if (!resume.file_id) throw new NotFoundError('File missing on server');
 
-  res.download(resume.file_path, resume.filename);
+  res.setHeader('Content-Type', resume.content_type || 'application/octet-stream');
+  res.setHeader('Content-Disposition', `attachment; filename="${encodeURIComponent(resume.filename)}"`);
+
+  const stream = getBucket().openDownloadStream(resume.file_id);
+  stream.on('error', () => res.status(404).json({ detail: 'File missing on server' }));
+  stream.pipe(res);
 }));
 
 // DELETE /api/resume/:id
 router.delete('/:id', requireAuth, catchErrors(async (req, res) => {
-  const resume = db
-    .prepare('SELECT * FROM resumes WHERE id = ? AND user_id = ?')
-    .get(Number(req.params.id), req.user.id);
-
+  const _id = parseObjectIdParam(req.params.id);
+  const resume = await collections.resumes().findOne({ _id, user_id: req.user._id });
   if (!resume) throw new NotFoundError('Resume not found');
 
-  try {
-    if (fs.existsSync(resume.file_path)) fs.unlinkSync(resume.file_path);
-  } catch {
-    // File removal failure is non-fatal
-  }
+  await deleteGridFSFile(resume.file_id);
+  await collections.resumeChunks().deleteMany({ resume_id: resume._id });
+  await collections.resumes().deleteOne({ _id: resume._id });
 
-  db.prepare('DELETE FROM resumes WHERE id = ?').run(resume.id);
   return res.status(204).send();
 }));
 

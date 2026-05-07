@@ -2,7 +2,7 @@ const express = require('express');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const { body } = require('express-validator');
-const db = require('../database');
+const { collections } = require('../database');
 const config = require('../config');
 const { catchErrors, validate } = require('../helpers');
 const { ConflictError, AccessError, InputError, NotFoundError } = require('../errors');
@@ -16,13 +16,14 @@ function createToken(userId) {
 }
 
 function formatUser(user) {
+  const id = String(user._id);
   return {
-    access_token: createToken(user.id),
+    access_token: createToken(id),
     token_type: 'bearer',
-    user_id: user.id,
+    user_id: id,
     full_name: user.full_name,
     email: user.email,
-    onboarding_completed: user.onboarding_completed === 1,
+    onboarding_completed: !!user.onboarding_completed,
   };
 }
 
@@ -39,16 +40,27 @@ router.post(
 
     const { full_name, email, password } = req.body;
 
-    const existing = db.prepare('SELECT id FROM users WHERE email = ?').get(email);
+    const users = collections.users();
+    const existing = await users.findOne({ email });
     if (existing) throw new ConflictError('Email already registered');
 
     const hashed = bcrypt.hashSync(password, 12);
-    const result = db
-      .prepare('INSERT INTO users (full_name, email, hashed_password) VALUES (?, ?, ?)')
-      .run(full_name, email, hashed);
-
-    const user = db.prepare('SELECT * FROM users WHERE id = ?').get(result.lastInsertRowid);
-    return res.status(201).json(formatUser(user));
+    const now = new Date();
+    const doc = {
+      full_name,
+      email,
+      hashed_password: hashed,
+      field: null,
+      career_goal: null,
+      stage: null,
+      skills: null,
+      is_active: true,
+      onboarding_completed: false,
+      created_at: now,
+      updated_at: now,
+    };
+    const result = await users.insertOne(doc);
+    return res.status(201).json(formatUser({ ...doc, _id: result.insertedId }));
   })
 );
 
@@ -64,11 +76,11 @@ router.post(
 
     const { email, password } = req.body;
 
-    const user = db.prepare('SELECT * FROM users WHERE email = ?').get(email);
+    const user = await collections.users().findOne({ email });
     if (!user || !bcrypt.compareSync(password, user.hashed_password)) {
       throw new AccessError('Incorrect email or password', 401);
     }
-    if (!user.is_active) throw new AccessError('Account is inactive', 403);
+    if (user.is_active === false) throw new AccessError('Account is inactive', 403);
 
     return res.json(formatUser(user));
   })
@@ -81,13 +93,20 @@ router.post(
   catchErrors(async (req, res) => {
     const { email } = req.body;
 
-    const user = db.prepare('SELECT id FROM users WHERE email = ?').get(email);
+    const user = await collections.users().findOne({ email }, { projection: { _id: 1 } });
     if (user) {
       const code = String(Math.floor(1000 + Math.random() * 9000));
-      const expiresAt = new Date(Date.now() + 15 * 60 * 1000).toISOString();
+      const expiresAt = new Date(Date.now() + 15 * 60 * 1000);
 
-      db.prepare('UPDATE password_reset_codes SET is_used = 1 WHERE email = ? AND is_used = 0').run(email);
-      db.prepare('INSERT INTO password_reset_codes (email, code, expires_at) VALUES (?, ?, ?)').run(email, code, expiresAt);
+      const codes = collections.passwordResetCodes();
+      await codes.updateMany({ email, is_used: false }, { $set: { is_used: true } });
+      await codes.insertOne({
+        email,
+        code,
+        is_used: false,
+        expires_at: expiresAt,
+        created_at: new Date(),
+      });
 
       try {
         await sendResetCodeEmail(email, code);
@@ -112,11 +131,13 @@ router.post(
     validate(req);
 
     const { email, code } = req.body;
-    const now = new Date().toISOString();
 
-    const record = db
-      .prepare('SELECT * FROM password_reset_codes WHERE email = ? AND code = ? AND is_used = 0 AND expires_at > ?')
-      .get(email, code, now);
+    const record = await collections.passwordResetCodes().findOne({
+      email,
+      code,
+      is_used: false,
+      expires_at: { $gt: new Date() },
+    });
 
     if (!record) throw new InputError('Invalid or expired code');
 
@@ -140,19 +161,25 @@ router.post(
 
     if (password !== confirm_password) throw new InputError('Passwords do not match');
 
-    const now = new Date().toISOString();
-    const record = db
-      .prepare('SELECT * FROM password_reset_codes WHERE email = ? AND code = ? AND is_used = 0 AND expires_at > ?')
-      .get(email, code, now);
-
+    const codes = collections.passwordResetCodes();
+    const record = await codes.findOne({
+      email,
+      code,
+      is_used: false,
+      expires_at: { $gt: new Date() },
+    });
     if (!record) throw new InputError('Invalid or expired code');
 
-    const user = db.prepare('SELECT id FROM users WHERE email = ?').get(email);
+    const users = collections.users();
+    const user = await users.findOne({ email });
     if (!user) throw new NotFoundError('User not found');
 
     const hashed = bcrypt.hashSync(password, 12);
-    db.prepare("UPDATE users SET hashed_password = ?, updated_at = datetime('now') WHERE id = ?").run(hashed, user.id);
-    db.prepare('UPDATE password_reset_codes SET is_used = 1 WHERE id = ?').run(record.id);
+    await users.updateOne(
+      { _id: user._id },
+      { $set: { hashed_password: hashed, updated_at: new Date() } }
+    );
+    await codes.updateOne({ _id: record._id }, { $set: { is_used: true } });
 
     return res.json({ message: 'Password reset successfully' });
   })

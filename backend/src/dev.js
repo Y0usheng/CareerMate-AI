@@ -9,9 +9,11 @@ const { spawn } = require('child_process');
 require('dotenv').config({ path: path.resolve(__dirname, '../.env') });
 
 const port     = process.env.PORT            || '8000';
-const dbPath   = process.env.DATABASE_PATH   || './careermate.db';
+const mongoUri = process.env.MONGODB_URI     || '';
+const mongoDb  = process.env.MONGODB_DB      || 'careermate';
 const origin   = process.env.FRONTEND_URL    || 'http://localhost:3000';
 const hasApiKey = Boolean(process.env.GEMINI_API_KEY);
+const mongoMasked = mongoUri ? mongoUri.replace(/\/\/[^:]+:[^@]+@/, '//***:***@') : '✗ NOT SET';
 
 console.log('');
 console.log('  ╔══════════════════════════════════════╗');
@@ -21,7 +23,8 @@ console.log('');
 console.log('  Configuration');
 console.log('  ───────────────────────────────────────');
 console.log(`  Port          : ${port}`);
-console.log(`  Database      : ${dbPath}`);
+console.log(`  MongoDB URI   : ${mongoMasked}`);
+console.log(`  MongoDB DB    : ${mongoDb}`);
 console.log(`  CORS origin   : ${origin}`);
 console.log(`  Gemini key    : ${hasApiKey ? '✓ set' : '✗ NOT SET — AI chat disabled'}`);
 console.log(`  Node env      : ${process.env.NODE_ENV || 'development'}`);

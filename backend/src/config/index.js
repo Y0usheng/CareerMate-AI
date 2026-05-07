@@ -5,8 +5,9 @@ const config = {
   debug: process.env.DEBUG === 'true',
   port: parseInt(process.env.PORT || '8000', 10),
 
-  // Database
-  databasePath: process.env.DATABASE_PATH || './careermate.db',
+  // Database (MongoDB)
+  mongodbUri: process.env.MONGODB_URI || '',
+  mongodbDb: process.env.MONGODB_DB || 'careermate',
 
   // JWT
   secretKey: process.env.SECRET_KEY || 'change-this-secret-key-in-production',
@@ -19,8 +20,7 @@ const config = {
   ragTopKResume: parseInt(process.env.RAG_TOP_K_RESUME || '4', 10),
   ragTopKJobs: parseInt(process.env.RAG_TOP_K_JOBS || '3', 10),
 
-  // File uploads
-  uploadDir: process.env.UPLOAD_DIR || 'uploads',
+  // File uploads (stored in GridFS — only the size limit is still relevant).
   maxUploadSizeMb: parseInt(process.env.MAX_UPLOAD_SIZE_MB || '10', 10),
 
   // CORS

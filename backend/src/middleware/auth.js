@@ -1,8 +1,9 @@
 const jwt = require('jsonwebtoken');
+const { ObjectId } = require('mongodb');
 const config = require('../config');
-const db = require('../database');
+const { collections } = require('../database');
 
-function requireAuth(req, res, next) {
+async function requireAuth(req, res, next) {
   const authHeader = req.headers['authorization'];
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
     return res.status(401).json({ detail: 'Not authenticated' });
@@ -16,12 +17,23 @@ function requireAuth(req, res, next) {
     return res.status(401).json({ detail: 'Invalid or expired token' });
   }
 
-  const userId = parseInt(payload.sub, 10);
-  const user = db.prepare('SELECT * FROM users WHERE id = ?').get(userId);
+  let _id;
+  try {
+    _id = new ObjectId(String(payload.sub));
+  } catch {
+    return res.status(401).json({ detail: 'Invalid token subject' });
+  }
+
+  let user;
+  try {
+    user = await collections.users().findOne({ _id });
+  } catch (err) {
+    return next(err);
+  }
   if (!user) {
     return res.status(401).json({ detail: 'User not found' });
   }
-  if (!user.is_active) {
+  if (user.is_active === false) {
     return res.status(403).json({ detail: 'Account is inactive' });
   }
 

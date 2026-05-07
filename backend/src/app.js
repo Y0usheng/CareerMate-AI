@@ -1,12 +1,8 @@
 const express = require('express');
 const cors = require('cors');
-const path = require('path');
 const swaggerUi = require('swagger-ui-express');
 const swaggerDocument = require('./swagger.json');
 const config = require('./config');
-
-// Initialize DB (runs migrations on import)
-require('./database');
 
 const authRouter = require('./routes/auth');
 const userRouter = require('./routes/user');
@@ -31,9 +27,6 @@ app.use(
 // Body parsers
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-
-// Static files for uploads
-app.use('/uploads', express.static(path.resolve(process.cwd(), config.uploadDir)));
 
 // Root → redirect to interactive API docs (mirrors Presto pattern)
 app.get('/', (_req, res) => res.redirect('/docs'));

@@ -1,6 +1,6 @@
 const express = require('express');
 const { body } = require('express-validator');
-const db = require('../database');
+const { collections } = require('../database');
 const { catchErrors, validate } = require('../helpers');
 
 const router = express.Router();
@@ -18,9 +18,14 @@ router.post(
 
     const { fullname, email, role, field, message } = req.body;
 
-    db.prepare(
-      'INSERT INTO contact_messages (fullname, email, role, field, message) VALUES (?, ?, ?, ?, ?)'
-    ).run(fullname, email, role || null, field || null, message);
+    await collections.contactMessages().insertOne({
+      fullname,
+      email,
+      role: role || null,
+      field: field || null,
+      message,
+      created_at: new Date(),
+    });
 
     return res.status(201).json({ message: "Your message has been received. We'll be in touch soon!" });
   })
