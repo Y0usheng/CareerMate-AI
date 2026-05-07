@@ -73,6 +73,42 @@ function initDatabase() {
     );
 
     CREATE INDEX IF NOT EXISTS idx_password_reset_email ON password_reset_codes(email);
+
+    -- RAG: chunked resume text with embeddings (BLOB = Float32Array bytes).
+    CREATE TABLE IF NOT EXISTS resume_chunks (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      resume_id INTEGER NOT NULL REFERENCES resumes(id) ON DELETE CASCADE,
+      user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      chunk_index INTEGER NOT NULL,
+      content TEXT NOT NULL,
+      embedding BLOB NOT NULL,
+      dim INTEGER NOT NULL,
+      created_at TEXT NOT NULL DEFAULT (datetime('now'))
+    );
+    CREATE INDEX IF NOT EXISTS idx_resume_chunks_user ON resume_chunks(user_id);
+    CREATE INDEX IF NOT EXISTS idx_resume_chunks_resume ON resume_chunks(resume_id);
+
+    -- RAG: job description library (shared across users).
+    CREATE TABLE IF NOT EXISTS jobs (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      title TEXT NOT NULL,
+      company TEXT,
+      location TEXT,
+      description TEXT NOT NULL,
+      source TEXT,
+      created_at TEXT NOT NULL DEFAULT (datetime('now'))
+    );
+
+    CREATE TABLE IF NOT EXISTS job_chunks (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      job_id INTEGER NOT NULL REFERENCES jobs(id) ON DELETE CASCADE,
+      chunk_index INTEGER NOT NULL,
+      content TEXT NOT NULL,
+      embedding BLOB NOT NULL,
+      dim INTEGER NOT NULL,
+      created_at TEXT NOT NULL DEFAULT (datetime('now'))
+    );
+    CREATE INDEX IF NOT EXISTS idx_job_chunks_job ON job_chunks(job_id);
   `);
 }
 

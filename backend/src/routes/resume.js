@@ -8,6 +8,7 @@ const db = require('../database');
 const config = require('../config');
 const { catchErrors } = require('../helpers');
 const { InputError, NotFoundError } = require('../errors');
+const { indexResume } = require('../lib/rag');
 
 const router = express.Router();
 
@@ -83,7 +84,23 @@ router.post('/upload', requireAuth, catchErrors(async (req, res) => {
   ).run(userId, req.file.originalname, req.file.filename, req.file.path, req.file.size, req.file.mimetype);
 
   const resume = db.prepare('SELECT * FROM resumes WHERE id = ?').get(result.lastInsertRowid);
-  return res.status(201).json(formatResume(resume));
+
+  // Synchronous indexing — chat retrieval needs chunks ready on the very
+  // next turn. Failure here must not break the upload itself, so we log and
+  // continue (chat still has the inline-PDF fallback path).
+  let indexed = { chunks: 0 };
+  try {
+    indexed = await indexResume({
+      resumeId: resume.id,
+      userId,
+      filePath: resume.file_path,
+      filename: resume.filename,
+    });
+  } catch (err) {
+    console.error('resume.upload: indexing failed:', err.message);
+  }
+
+  return res.status(201).json({ ...formatResume(resume), indexed_chunks: indexed.chunks });
 }));
 
 // GET /api/resume — list all resumes for the current user

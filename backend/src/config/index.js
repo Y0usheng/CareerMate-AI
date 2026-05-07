@@ -15,6 +15,9 @@ const config = {
   // Gemini
   geminiApiKey: process.env.GEMINI_API_KEY || '',
   geminiModel: process.env.GEMINI_MODEL || 'gemini-2.5-flash',
+  embeddingModel: process.env.EMBEDDING_MODEL || 'text-embedding-004',
+  ragTopKResume: parseInt(process.env.RAG_TOP_K_RESUME || '4', 10),
+  ragTopKJobs: parseInt(process.env.RAG_TOP_K_JOBS || '3', 10),
 
   // File uploads
   uploadDir: process.env.UPLOAD_DIR || 'uploads',
