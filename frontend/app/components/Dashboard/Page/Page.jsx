@@ -8,6 +8,7 @@ import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { MobileNavDrawer, MobileTopBar } from "../../Shared/MobileShell";
 import {
+    askAgent,
     clearAuth,
     deleteResume,
     fetchProfile,
@@ -19,6 +20,7 @@ import {
 } from "../../../lib/api";
 
 const CHAT_STORAGE_KEY = "careermate_chats";
+const AGENT_MODE_KEY = "careermate_agent_mode";
 
 const starterPrompts = [
     "Summarize my resume and suggest three improvements.",
@@ -29,6 +31,7 @@ const starterPrompts = [
 const navItems = [
     { label: "Home", href: "/dashboard" },
     { label: "Resume", href: "/resume" },
+    { label: "Jobs", href: "/jobs" },
     { label: "Settings", href: "/settings" },
 ];
 
@@ -81,6 +84,7 @@ const Page = () => {
     const [conversations, setConversations] = useState([]);
     const [activeId, setActiveId] = useState(null);
     const [isReplying, setIsReplying] = useState(false);
+    const [agentMode, setAgentMode] = useState(false);
     const [errorMessage, setErrorMessage] = useState("");
     const [mobileNavOpen, setMobileNavOpen] = useState(false);
     const [accountMenuOpen, setAccountMenuOpen] = useState(false);
@@ -139,6 +143,16 @@ const Page = () => {
     useEffect(() => {
         if (conversations.length > 0) saveConversations(conversations);
     }, [conversations]);
+
+    useEffect(() => {
+        if (typeof window === "undefined") return;
+        setAgentMode(window.localStorage.getItem(AGENT_MODE_KEY) === "1");
+    }, []);
+
+    useEffect(() => {
+        if (typeof window === "undefined") return;
+        window.localStorage.setItem(AGENT_MODE_KEY, agentMode ? "1" : "0");
+    }, [agentMode]);
 
     useEffect(() => {
         if (!accountMenuOpen) return;
@@ -267,12 +281,22 @@ const Page = () => {
         setErrorMessage("");
 
         try {
-            const { reply } = await sendChatMessage(question, history);
+            const data = agentMode
+                ? await askAgent(question, history)
+                : await sendChatMessage(question, history);
+            const meta = agentMode
+                ? { intent: data.intent, attempts: data.attempts, grounded: data.grounded }
+                : null;
             updateActive((c) => ({
                 ...c,
                 messages: [
                     ...c.messages,
-                    { id: Date.now() + 1, role: "assistant", text: reply || "(no response)" },
+                    {
+                        id: Date.now() + 1,
+                        role: "assistant",
+                        text: data.reply || "(no response)",
+                        meta,
+                    },
                 ],
             }));
         } catch (err) {
@@ -417,6 +441,8 @@ const Page = () => {
                                             <path d="M10 2.5a1 1 0 01.7.29l7 6.5a1 1 0 01-.7 1.71H16v6a1 1 0 01-1 1h-3v-5H8v5H5a1 1 0 01-1-1v-6H3a1 1 0 01-.7-1.71l7-6.5A1 1 0 0110 2.5z" />
                                         ) : item.label === "Resume" ? (
                                             <path d="M6 2a2 2 0 00-2 2v12a2 2 0 002 2h8a2 2 0 002-2V7.41a2 2 0 00-.59-1.41l-3.41-3.41A2 2 0 0010.59 2H6zm1 7a1 1 0 011-1h4a1 1 0 110 2H8a1 1 0 01-1-1zm0 3a1 1 0 011-1h4a1 1 0 110 2H8a1 1 0 01-1-1zm0 3a1 1 0 011-1h2a1 1 0 110 2H8a1 1 0 01-1-1z" />
+                                        ) : item.label === "Jobs" ? (
+                                            <path d="M7 5V4a2 2 0 012-2h2a2 2 0 012 2v1h3a2 2 0 012 2v3H1V7a2 2 0 012-2h4zm2-1v1h2V4H9zM1 11h18v5a2 2 0 01-2 2H3a2 2 0 01-2-2v-5zm8 1a1 1 0 100 2h2a1 1 0 100-2H9z" />
                                         ) : (
                                             <path
                                                 fillRule="evenodd"
@@ -585,6 +611,14 @@ const Page = () => {
                                                         <ReactMarkdown remarkPlugins={[remarkGfm]}>
                                                             {message.text}
                                                         </ReactMarkdown>
+                                                        {message.meta ? (
+                                                            <p className="mt-2 border-t border-slate-100 pt-2 text-[10px] font-semibold uppercase tracking-wide text-slate-400">
+                                                                Agent · {message.meta.intent || "general"} ·{" "}
+                                                                {message.meta.attempts || 1} pass
+                                                                {(message.meta.attempts || 1) > 1 ? "es" : ""}
+                                                                {message.meta.grounded ? " · grounded" : ""}
+                                                            </p>
+                                                        ) : null}
                                                     </div>
                                                 ) : (
                                                     <div className="flex flex-col gap-2">
@@ -730,15 +764,38 @@ const Page = () => {
                                     ) : (
                                         <span className="truncate pr-3">PDF, DOC, DOCX — up to 10MB</span>
                                     )}
-                                    <span className="shrink-0">
-                                        {resumeStatus === "uploading"
-                                            ? "Uploading..."
-                                            : resumeStatus === "uploaded"
-                                              ? "Resume ready"
-                                              : resumeStatus === "error"
-                                                ? "Upload failed"
-                                                : "Waiting"}
-                                    </span>
+                                    <div className="flex shrink-0 items-center gap-2">
+                                        <button
+                                            type="button"
+                                            onClick={() => setAgentMode((m) => !m)}
+                                            aria-pressed={agentMode}
+                                            title={
+                                                agentMode
+                                                    ? "Agent mode ON — multi-step: retrieve → draft → self-check → re-draft"
+                                                    : "Agent mode OFF — fast single-shot reply"
+                                            }
+                                            className={`inline-flex items-center gap-1 rounded-full border px-2 py-1 text-[10px] font-semibold uppercase tracking-wide transition ${
+                                                agentMode
+                                                    ? "border-[#4f6bff] bg-[#eef1ff] text-[#4f6bff]"
+                                                    : "border-slate-200 bg-white text-slate-400 hover:text-slate-600"
+                                            }`}
+                                        >
+                                            <svg className="h-3 w-3" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                                                <path d="M10 1.5l1.6 3.6 3.9.4-2.9 2.6.8 3.8L10 12.6 6.6 12.5l.8-3.8L4.5 6.1l3.9-.4L10 1.5z" />
+                                                <path d="M5 13.5l.8 1.8 1.9.2-1.4 1.3.4 1.9L5 17.9l-1.7.8.4-1.9-1.4-1.3 1.9-.2L5 13.5z" />
+                                            </svg>
+                                            Agent
+                                        </button>
+                                        <span>
+                                            {resumeStatus === "uploading"
+                                                ? "Uploading..."
+                                                : resumeStatus === "uploaded"
+                                                  ? "Resume ready"
+                                                  : resumeStatus === "error"
+                                                    ? "Upload failed"
+                                                    : "Waiting"}
+                                        </span>
+                                    </div>
                                 </div>
                             </div>
                         </div>

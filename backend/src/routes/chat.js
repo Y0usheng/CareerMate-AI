@@ -1,68 +1,30 @@
 const express = require('express');
-const path = require('path');
 const { body } = require('express-validator');
 const { GoogleGenAI } = require('@google/genai');
-const mammoth = require('mammoth');
 const { requireAuth } = require('../middleware/auth');
-const { collections, getBucket } = require('../database');
 const config = require('../config');
 const { catchErrors, validate } = require('../helpers');
 const { InputError } = require('../errors');
 const { classifyIntent } = require('../lib/intentRouter');
 const { buildPrompt } = require('../lib/promptTemplates');
 const { retrieve } = require('../lib/rag');
+const { loadActiveResume, resumeTextBlock } = require('../lib/resumeContext');
 
 const router = express.Router();
 
-// Drains a GridFS read stream into a Buffer.
-function readGridFSFile(fileId) {
-  return new Promise((resolve, reject) => {
-    const chunks = [];
-    const stream = getBucket().openDownloadStream(fileId);
-    stream.on('data', (c) => chunks.push(c));
-    stream.on('end', () => resolve(Buffer.concat(chunks)));
-    stream.on('error', reject);
-  });
-}
-
 /**
- * Returns a Gemini `part` for the user's active resume, or null. We still
- * inline the full PDF (or DOCX text) on every turn so the model has the
- * untruncated document — RAG narrows attention via the system prompt, the
+ * Returns a native @google/genai `part` for the user's active resume, or null.
+ * We still inline the full PDF (or DOCX text) on every turn so the model has
+ * the untruncated document — RAG narrows attention via the system prompt, the
  * inline part is the safety net.
  */
 async function buildResumePart(userId) {
-  const resume = await collections
-    .resumes()
-    .findOne({ user_id: userId, is_active: true }, { sort: { created_at: -1 } });
-
-  if (!resume || !resume.file_id) return null;
-
-  const ext = path.extname(resume.filename || '').toLowerCase();
-
-  try {
-    const buffer = await readGridFSFile(resume.file_id);
-    if (ext === '.pdf') {
-      return {
-        inlineData: {
-          mimeType: 'application/pdf',
-          data: buffer.toString('base64'),
-        },
-      };
-    }
-    if (ext === '.docx') {
-      const { value } = await mammoth.extractRawText({ buffer });
-      const text = (value || '').trim();
-      if (!text) return null;
-      return {
-        text: `Attached resume file: ${resume.filename}\n\n--- RESUME CONTENT ---\n${text}\n--- END RESUME ---`,
-      };
-    }
-    return null;
-  } catch (err) {
-    console.error('Failed to load resume for chat:', err.message);
-    return null;
+  const resume = await loadActiveResume(userId);
+  if (!resume) return null;
+  if (resume.kind === 'pdf') {
+    return { inlineData: { mimeType: resume.mimeType, data: resume.dataBase64 } };
   }
+  return { text: resumeTextBlock(resume.filename, resume.text) };
 }
 
 async function generateWithFallback(ai, contents, systemInstruction) {

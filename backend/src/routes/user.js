@@ -92,12 +92,12 @@ router.put(
     const { current_password, new_password, confirm_password } = req.body;
     const user = req.user;
 
-    if (!bcrypt.compareSync(current_password, user.hashed_password)) {
+    if (!(await bcrypt.compare(current_password, user.hashed_password))) {
       throw new InputError('Current password is incorrect');
     }
     if (new_password !== confirm_password) throw new InputError('New passwords do not match');
 
-    const hashed = bcrypt.hashSync(new_password, 12);
+    const hashed = await bcrypt.hash(new_password, 12);
     await collections.users().updateOne(
       { _id: user._id },
       { $set: { hashed_password: hashed, updated_at: new Date() } }

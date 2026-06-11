@@ -44,7 +44,7 @@ router.post(
     const existing = await users.findOne({ email });
     if (existing) throw new ConflictError('Email already registered');
 
-    const hashed = bcrypt.hashSync(password, 12);
+    const hashed = await bcrypt.hash(password, 12);
     const now = new Date();
     const doc = {
       full_name,
@@ -77,7 +77,7 @@ router.post(
     const { email, password } = req.body;
 
     const user = await collections.users().findOne({ email });
-    if (!user || !bcrypt.compareSync(password, user.hashed_password)) {
+    if (!user || !(await bcrypt.compare(password, user.hashed_password))) {
       throw new AccessError('Incorrect email or password', 401);
     }
     if (user.is_active === false) throw new AccessError('Account is inactive', 403);
@@ -174,7 +174,7 @@ router.post(
     const user = await users.findOne({ email });
     if (!user) throw new NotFoundError('User not found');
 
-    const hashed = bcrypt.hashSync(password, 12);
+    const hashed = await bcrypt.hash(password, 12);
     await users.updateOne(
       { _id: user._id },
       { $set: { hashed_password: hashed, updated_at: new Date() } }

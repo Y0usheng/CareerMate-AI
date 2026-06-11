@@ -115,6 +115,23 @@ export async function deleteResume(id) {
     return apiFetch(`/resume/${id}`, { method: "DELETE" });
 }
 
+// --- Job description (JD) library — feeds RAG job-matching ---
+export async function fetchJobs() {
+    return apiFetch("/jobs");
+}
+
+export async function addJob(payload) {
+    // payload: { title, description, company?, location?, source? }
+    return apiFetch("/jobs", {
+        method: "POST",
+        body: JSON.stringify(payload),
+    });
+}
+
+export async function deleteJob(id) {
+    return apiFetch(`/jobs/${id}`, { method: "DELETE" });
+}
+
 export function resumeDownloadUrl(id) {
     return `${API_BASE_URL}/resume/${id}/download`;
 }
@@ -142,6 +159,15 @@ export async function resetPassword(email, code, password, confirmPassword) {
 
 export async function sendChatMessage(message, history = []) {
     return apiFetch("/chat", {
+        method: "POST",
+        body: JSON.stringify({ message, history }),
+    });
+}
+
+// Multi-step LangGraph agent. Same request shape as sendChatMessage, but the
+// response also carries { intent, attempts, grounded, steps, retrieval }.
+export async function askAgent(message, history = []) {
+    return apiFetch("/agent", {
         method: "POST",
         body: JSON.stringify({ message, history }),
     });

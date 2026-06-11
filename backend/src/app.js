@@ -9,6 +9,7 @@ const userRouter = require('./routes/user');
 const onboardingRouter = require('./routes/onboarding');
 const resumeRouter = require('./routes/resume');
 const chatRouter = require('./routes/chat');
+const agentRouter = require('./routes/agent');
 const contactRouter = require('./routes/contact');
 const jobsRouter = require('./routes/jobs');
 
@@ -52,6 +53,7 @@ app.use('/api/user', userRouter);
 app.use('/api/onboarding', onboardingRouter);
 app.use('/api/resume', resumeRouter);
 app.use('/api/chat', chatRouter);
+app.use('/api/agent', agentRouter);
 app.use('/api/contact', contactRouter);
 app.use('/api/jobs', jobsRouter);
 

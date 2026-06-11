@@ -16,7 +16,9 @@ const config = {
   // Gemini
   geminiApiKey: process.env.GEMINI_API_KEY || '',
   geminiModel: process.env.GEMINI_MODEL || 'gemini-2.5-flash',
-  embeddingModel: process.env.EMBEDDING_MODEL || 'text-embedding-004',
+  // gemini-embedding-001 is the current Gemini embedding model (3072-dim);
+  // text-embedding-004 now 404s on the public Generative Language API.
+  embeddingModel: process.env.EMBEDDING_MODEL || 'gemini-embedding-001',
   ragTopKResume: parseInt(process.env.RAG_TOP_K_RESUME || '4', 10),
   ragTopKJobs: parseInt(process.env.RAG_TOP_K_JOBS || '3', 10),
 

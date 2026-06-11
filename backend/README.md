@@ -1,20 +1,21 @@
 # CareerMate AI — Backend
 
-Express + SQLite API that powers auth, resume storage and Gemini-backed chat for CareerMate AI.
+Express + MongoDB API that powers auth, resume storage and Gemini-backed chat for CareerMate AI.
 
 ## Tech stack
 
 | Layer        | Technology                                      |
 |--------------|-------------------------------------------------|
-| Runtime      | Node.js ≥ 18                                    |
+| Runtime      | Node.js 22.x                                    |
 | Framework    | Express 4                                       |
-| Database     | SQLite via `better-sqlite3`                     |
+| Database     | MongoDB Atlas (`mongodb`) + GridFS for files    |
 | Auth         | JWT (`jsonwebtoken`) + `bcryptjs`               |
 | Validation   | `express-validator`                             |
-| AI           | Google Gemini (`@google/genai`) — chat + embeddings |
-| RAG          | In-process retrieval over SQLite BLOB embeddings (cosine) |
+| AI           | Google Gemini — chat (`@google/genai`) + LangChain adapters (`@langchain/google-genai`) |
+| RAG          | LangChain (splitter + embeddings + custom `BaseRetriever`) over Mongo, cosine ranked in JS |
+| Agent        | LangGraph (`@langchain/langgraph`) — multi-step classify→retrieve→generate→self-critique loop |
 | File parsing | `pdf-parse` (text for RAG) · inline PDF (chat) · `mammoth` (DOCX) |
-| Uploads      | `multer` disk storage                           |
+| Uploads      | `multer` (memory) → GridFS                       |
 | Docs         | `swagger-ui-express` at `/docs`                 |
 
 ## Project structure
@@ -26,30 +27,30 @@ backend/
 │   ├── server.js             # HTTP listener
 │   ├── dev.js                # Interactive dev launcher
 │   ├── config/index.js       # Env-driven config
-│   ├── database/index.js     # SQLite connection + schema migrations
+│   ├── database/index.js     # MongoDB connection + GridFS + index setup
 │   ├── errors.js             # Typed error classes
 │   ├── helpers.js            # catchErrors, validate
 │   ├── middleware/auth.js    # requireAuth (JWT → req.user)
 │   ├── lib/
 │   │   ├── mailer.js         # Password-reset code delivery (dev = console)
 │   │   ├── textExtract.js    # PDF/DOCX → plain text (for RAG indexing)
-│   │   ├── chunker.js        # Paragraph-aware text splitter w/ overlap
-│   │   ├── embeddings.js     # Gemini embedding client + cosine + BLOB codec
-│   │   ├── vectorStore.js    # SQLite-backed vector storage + cosine ranking
+│   │   ├── chunker.js        # LangChain RecursiveCharacterTextSplitter (overlap)
+│   │   ├── embeddings.js     # LangChain GoogleGenerativeAIEmbeddings + cosine
+│   │   ├── vectorStore.js    # Mongo writes + LangChain BaseRetriever (cosine in JS)
 │   │   ├── intentRouter.js   # Heuristic + LLM intent classifier
 │   │   ├── promptTemplates.js# 5 task-specific system-prompt templates
-│   │   └── rag.js            # Orchestrator: indexResume / indexJob / retrieve
+│   │   ├── rag.js            # Orchestrator: indexResume / indexJob / retrieve
+│   │   └── agent.js          # LangGraph agent (StateGraph + self-critique loop)
 │   └── routes/
 │       ├── auth.js           # register, login, forgot/verify/reset-password
 │       ├── user.js           # profile, career, password update
 │       ├── onboarding.js     # first-run profile capture
 │       ├── resume.js         # upload (+ index) / list / download / delete
-│       ├── chat.js           # Intent-routed RAG → Gemini
+│       ├── chat.js           # Intent-routed RAG → Gemini (single-shot)
+│       ├── agent.js          # Multi-step LangGraph agent
 │       ├── jobs.js           # JD library CRUD (+ index on create)
 │       └── contact.js        # contact form
 ├── swagger.json              # OpenAPI spec served at /docs
-├── uploads/                  # user-uploaded files (gitignored)
-├── careermate.db             # SQLite file (gitignored)
 └── .env                      # secrets (gitignored; see .env.example)
 ```
 
@@ -65,15 +66,15 @@ Required env vars:
 
 ```dotenv
 PORT=8000
-DATABASE_PATH=./careermate.db
+MONGODB_URI=your_atlas_connection_string
+MONGODB_DB=careermate
 SECRET_KEY=change-this-to-a-long-random-string
 ACCESS_TOKEN_EXPIRE_MINUTES=10080
 GEMINI_API_KEY=your_key_here
 GEMINI_MODEL=gemini-2.5-flash
-EMBEDDING_MODEL=text-embedding-004
+EMBEDDING_MODEL=gemini-embedding-001
 RAG_TOP_K_RESUME=4
 RAG_TOP_K_JOBS=3
-UPLOAD_DIR=uploads
 MAX_UPLOAD_SIZE_MB=10
 FRONTEND_URL=http://localhost:3000
 ```
@@ -108,7 +109,8 @@ All routes are prefixed with `/api`.
 | GET    | `/resume`                     | JWT  | List uploaded resumes                  |
 | GET    | `/resume/:id/download`        | JWT  | Stream original file                   |
 | DELETE | `/resume/:id`                 | JWT  | Delete resume + file                   |
-| POST   | `/chat`                       | JWT  | Intent-routed RAG turn (see below)     |
+| POST   | `/chat`                       | JWT  | Intent-routed RAG turn, single-shot (see below) |
+| POST   | `/agent`                      | JWT  | Same input as `/chat`; multi-step LangGraph agent |
 | POST   | `/jobs`                       | JWT  | Add JD to library (auto-indexed)       |
 | GET    | `/jobs`                       | JWT  | List JD library                        |
 | GET    | `/jobs/:id`                   | JWT  | Get one JD                             |
@@ -193,35 +195,34 @@ RAG = **R**etrieval-**A**ugmented **G**eneration: at query time, find the most r
 - **Cost / latency** — the model reads ~4 short chunks instead of a multi-page PDF every turn.
 - **Cross-document reasoning** — the same retrieval call can pull resume chunks *and* JD chunks, enabling "match my resume to this role" without bespoke logic.
 
+The layer is built on **LangChain components**, but assembled to fit our store. `rag.js` keeps a small stable API (`indexResume` / `indexJob` / `retrieve`) so the routes don't care what's underneath.
+
 **Write path (indexing — runs on upload):**
 
 ```
 file (PDF/DOCX)
-  → textExtract.extractText      (pdf-parse / mammoth → plain text)
-  → chunker.chunkText            (~900 char chunks, paragraph-aware, 150 char overlap)
-  → embeddings.embedMany         (Gemini text-embedding-004, RETRIEVAL_DOCUMENT)
-  → vectorStore.insertResumeChunks  (Float32Array → BLOB in SQLite)
+  → textExtract.extractText                  (pdf-parse / mammoth → plain text)
+  → chunker.chunkText                        (LangChain RecursiveCharacterTextSplitter, overlap)
+  → getEmbeddings('RETRIEVAL_DOCUMENT')      (GoogleGenerativeAIEmbeddings, gemini-embedding-001)
+      .embedDocuments(chunks)
+  → vectorStore.insertResumeChunks           (embedding stored as a JSON number[] in Mongo)
 ```
 
 **Read path (retrieval — runs each chat turn):**
 
 ```
 user message
-  → embeddings.embedOne(query, RETRIEVAL_QUERY)
-  → vectorStore.searchResumeChunks (cosine over user's chunks, top-K)
-  → vectorStore.searchJobChunks    (cosine over JD library, top-K, only when intent benefits)
-  → handed to promptTemplates.buildPrompt as `resumeChunks` / `jobChunks`
+  → vectorStore.makeResumeRetriever({ userId, topK, embeddings })   (a LangChain BaseRetriever)
+       .invoke(query)   → embedQuery + cosine over the user's chunks, top-K
+  → vectorStore.makeJobRetriever({ topK, embeddings }).invoke(query) (only when intent benefits)
+  → Documents mapped back to `resumeChunks` / `jobChunks` for promptTemplates.buildPrompt
 ```
 
-**Storage** — embeddings live in SQLite as `BLOB` columns (raw `Float32Array` bytes). We rank in JS with a hand-rolled cosine. This is deliberate:
-
-- Zero extra dependencies, zero native build steps (important on Windows).
-- Plenty fast for the working set (one user's resume = a handful of chunks; JD library = dozens-to-hundreds).
-- `vectorStore.js` is the only file that knows storage details. When the corpus grows past ~10k vectors, swapping to `sqlite-vec` virtual tables or pgvector is a single-file change.
+**Why a custom retriever instead of `MongoDBAtlasVectorSearch`** — Atlas M0 has no Vector Search, so `vectorStore.js` exposes a `MongoCosineRetriever extends BaseRetriever`: it loads the candidate chunks for the user/library from Mongo and ranks them in JS with a hand-rolled cosine. The rest of the stack (RAG orchestrator *and* the LangGraph agent) just consumes the standard `retriever.invoke(query) → Document[]` interface. When the corpus grows past ~10k vectors, switch to Atlas Vector Search behind the same retriever — a single-file change.
 
 **Tunables** (see `config/index.js` / env):
 
-- `EMBEDDING_MODEL` — default `text-embedding-004`.
+- `EMBEDDING_MODEL` — default `gemini-embedding-001` (3072-dim; `text-embedding-004` now 404s on the public API).
 - `RAG_TOP_K_RESUME` — chunks pulled from the user's resume per turn (default 4).
 - `RAG_TOP_K_JOBS` — chunks pulled from the JD library per turn (default 3).
 
@@ -260,6 +261,37 @@ POST /api/chat { message, history }
 
 The response includes `intent` and the per-chunk relevance scores so the frontend (or you, while debugging) can see *why* the model said what it said.
 
+---
+
+### 4 · Agent layer (`src/lib/agent.js`, LangGraph)
+
+`/api/chat` is a single straight-line pass: classify → retrieve → generate → done. `/api/agent` runs the **same** Prompt + RAG building blocks inside a LangGraph `StateGraph` that can *loop* — the difference between a pipeline and an agent.
+
+```
+START → classify → retrieve → generate → critiqueDraft ──grounded?──→ finalize → END
+                      ▲                        │
+                      └──────── not grounded ──┘   (re-retrieve + redraft, up to 2 attempts)
+```
+
+- **classify / retrieve / generate** reuse `intentRouter`, `rag.retrieve`, and `promptTemplates` — no duplicated logic.
+- **critiqueDraft** is a cheap LLM self-check (Gemini in JSON mode → `{ grounded, feedback }`): is every claim about the candidate backed by the retrieved resume context?
+- **the loop** — if the draft isn't grounded, the critique feedback is folded into a fresh retrieval query and the model redrafts. Capped at `MAX_ATTEMPTS` (2) so it can't spin.
+
+Request shape is identical to `/api/chat` (`{ message, history }`). The response adds agent diagnostics:
+
+```jsonc
+{
+  "reply": "...",
+  "intent": "career_planning",
+  "attempts": 1,
+  "grounded": true,
+  "steps": ["classify:career_planning", "retrieve:r4/j0", "generate:#1", "critique:ok", "finalize"],
+  "retrieval": { "resume_chunks": [...], "job_chunks": [...] }
+}
+```
+
+`/api/chat` stays the default low-latency path; `/api/agent` is the higher-quality, self-correcting one. They coexist so you can compare them on the same input.
+
 ## Password reset — dev mode
 
 When SMTP is not configured, codes are printed to the server console instead of emailed:
@@ -277,15 +309,15 @@ To deliver real email, reintroduce `nodemailer` (or a provider like Resend) insi
 
 ## Database
 
-Schema and lightweight migrations live in `src/database/index.js` — on import, the module connects to `config.databasePath` and ensures all tables exist.
+MongoDB lives in `src/database/index.js`: `connect()` lazily opens the Atlas client, sets up a GridFS bucket for uploaded files, and calls `ensureIndexes()`. The `collections.*()` accessors are used throughout the app.
 
-| Table | Purpose |
-|-------|---------|
+| Collection | Purpose |
+|------------|---------|
 | `users` | Account + denormalized career profile fields |
 | `onboarding_profiles` | First-run answers (one-to-one with users) |
-| `resumes` | Uploaded files, with `is_active = 1` marking the latest |
-| `resume_chunks` | RAG: chunked resume text + embedding BLOB (FK → resumes, cascades on delete) |
+| `resumes` | Resume metadata; the file bytes live in GridFS (`resumes` bucket) |
+| `resume_chunks` | RAG: chunked resume text + embedding (`number[]`), indexed by `user_id` / `resume_id` |
 | `jobs` | JD library (shared across users) |
-| `job_chunks` | RAG: chunked JD text + embedding BLOB (FK → jobs, cascades) |
-| `password_reset_codes` | 4-digit codes with 15-minute expiry |
+| `job_chunks` | RAG: chunked JD text + embedding (`number[]`), indexed by `job_id` |
+| `password_reset_codes` | 4-digit codes with 15-minute expiry (TTL index) |
 | `contact_messages` | Contact form submissions |

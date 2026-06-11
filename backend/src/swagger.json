@@ -493,7 +493,74 @@
           },
           "401": { "$ref": "#/components/responses/Unauthorized" },
           "422": { "$ref": "#/components/responses/UnprocessableEntity" },
-          "503": { "description": "ANTHROPIC_API_KEY not configured", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } } }
+          "503": { "description": "GEMINI_API_KEY not configured", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } } }
+        }
+      }
+    },
+    "/api/agent": {
+      "post": {
+        "tags": ["Chat"],
+        "summary": "Multi-step LangGraph agent (classify → retrieve → generate → self-critique loop)",
+        "description": "Same request shape as /api/chat, but runs a LangGraph StateGraph: it retrieves resume/JD context, drafts an answer, self-checks whether every claim is grounded in the resume, and re-retrieves + re-drafts if not (up to 2 attempts). Returns the reply plus agent diagnostics.",
+        "security": [{ "bearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["message"],
+                "properties": {
+                  "message": { "type": "string" },
+                  "history": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "role":    { "type": "string", "enum": ["user", "assistant"] },
+                        "content": { "type": "string" }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Agent reply with diagnostics",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "reply":    { "type": "string" },
+                    "intent":   { "type": "string", "enum": ["resume_rewrite", "interview_prep", "job_match", "career_planning", "general"] },
+                    "attempts": { "type": "integer", "description": "Number of generate passes (1-2)" },
+                    "grounded": { "type": "boolean", "description": "Whether the final draft passed the grounding self-check" },
+                    "steps":    { "type": "array", "items": { "type": "string" }, "description": "Trace of the graph path, e.g. classify:general → retrieve:r4/j0 → generate:#1 → critique:ok → finalize" },
+                    "retrieval": {
+                      "type": "object",
+                      "properties": {
+                        "resume_chunks": {
+                          "type": "array",
+                          "items": { "type": "object", "properties": { "id": { "type": "string" }, "score": { "type": "number" } } }
+                        },
+                        "job_chunks": {
+                          "type": "array",
+                          "items": { "type": "object", "properties": { "id": { "type": "string" }, "job_id": { "type": "string" }, "title": { "type": "string" }, "score": { "type": "number" } } }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "422": { "$ref": "#/components/responses/UnprocessableEntity" },
+          "503": { "description": "GEMINI_API_KEY not configured", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/Error" } } } }
         }
       }
     },

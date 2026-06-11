@@ -20,6 +20,7 @@ import {
 const navItems = [
     { label: "Home", href: "/dashboard" },
     { label: "Resume", href: "/resume" },
+    { label: "Jobs", href: "/jobs" },
     { label: "Settings", href: "/settings" },
 ];
 
@@ -282,6 +283,8 @@ const Page = () => {
                                             <path d="M10 2.5a1 1 0 01.7.29l7 6.5a1 1 0 01-.7 1.71H16v6a1 1 0 01-1 1h-3v-5H8v5H5a1 1 0 01-1-1v-6H3a1 1 0 01-.7-1.71l7-6.5A1 1 0 0110 2.5z" />
                                         ) : item.label === "Resume" ? (
                                             <path d="M6 2a2 2 0 00-2 2v12a2 2 0 002 2h8a2 2 0 002-2V7.41a2 2 0 00-.59-1.41l-3.41-3.41A2 2 0 0010.59 2H6zm1 7a1 1 0 011-1h4a1 1 0 110 2H8a1 1 0 01-1-1zm0 3a1 1 0 011-1h4a1 1 0 110 2H8a1 1 0 01-1-1zm0 3a1 1 0 011-1h2a1 1 0 110 2H8a1 1 0 01-1-1z" />
+                                        ) : item.label === "Jobs" ? (
+                                            <path d="M7 5V4a2 2 0 012-2h2a2 2 0 012 2v1h3a2 2 0 012 2v3H1V7a2 2 0 012-2h4zm2-1v1h2V4H9zM1 11h18v5a2 2 0 01-2 2H3a2 2 0 01-2-2v-5zm8 1a1 1 0 100 2h2a1 1 0 100-2H9z" />
                                         ) : (
                                             <path
                                                 fillRule="evenodd"

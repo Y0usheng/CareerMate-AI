@@ -1,46 +1,43 @@
-const { GoogleGenAI } = require('@google/genai');
+// Gemini embeddings via LangChain's GoogleGenerativeAIEmbeddings adapter.
+//
+// We expose `getEmbeddings(taskType)` so the rest of the RAG stack speaks the
+// LangChain `Embeddings` interface (`embedDocuments` / `embedQuery`). The
+// adapter talks to the same `text-embedding-004` model the project used
+// before, so vectors already stored in Mongo stay in the same space — no
+// re-indexing needed when switching to LangChain.
+//
+// taskType is passed as the literal string Gemini expects (RETRIEVAL_DOCUMENT
+// for indexing, RETRIEVAL_QUERY for lookups). It maps 1:1 to the TaskType enum
+// in @google/generative-ai, so we avoid taking a direct dep on that package.
+
+const { GoogleGenerativeAIEmbeddings } = require('@langchain/google-genai');
 const config = require('../config');
 
-let _client = null;
-function client() {
+// One adapter instance per taskType — they're cheap but stateless, so cache.
+const _byTask = new Map();
+
+function getEmbeddings(taskType = 'RETRIEVAL_DOCUMENT') {
   if (!config.geminiApiKey) {
     throw new Error('GEMINI_API_KEY is not configured');
   }
-  if (!_client) _client = new GoogleGenAI({ apiKey: config.geminiApiKey });
-  return _client;
+  if (!_byTask.has(taskType)) {
+    _byTask.set(
+      taskType,
+      new GoogleGenerativeAIEmbeddings({
+        apiKey: config.geminiApiKey,
+        model: config.embeddingModel,
+        taskType,
+        // Keep raw text (matches how existing chunks were embedded); the
+        // default `true` would strip newlines and subtly shift vectors.
+        stripNewLines: false,
+      })
+    );
+  }
+  return _byTask.get(taskType);
 }
 
-// Float32Array <-> Buffer for SQLite BLOB storage.
-function vectorToBuffer(vec) {
-  const f32 = vec instanceof Float32Array ? vec : Float32Array.from(vec);
-  return Buffer.from(f32.buffer, f32.byteOffset, f32.byteLength);
-}
-
-function bufferToVector(buf) {
-  // Copy into a fresh aligned ArrayBuffer; better-sqlite3 buffers may not be aligned for Float32.
-  const ab = new ArrayBuffer(buf.byteLength);
-  Buffer.from(ab).set(buf);
-  return new Float32Array(ab);
-}
-
-async function embedOne(text, taskType = 'RETRIEVAL_DOCUMENT') {
-  const res = await client().models.embedContent({
-    model: config.embeddingModel,
-    contents: [{ parts: [{ text }] }],
-    config: { taskType },
-  });
-  const values = res?.embeddings?.[0]?.values;
-  if (!values || !values.length) throw new Error('Empty embedding response');
-  return Float32Array.from(values);
-}
-
-// Sequential to stay under per-minute quota; tiny resumes only need a handful of calls.
-async function embedMany(texts, taskType = 'RETRIEVAL_DOCUMENT') {
-  const out = [];
-  for (const t of texts) out.push(await embedOne(t, taskType));
-  return out;
-}
-
+// Cosine similarity over plain number[] (or Float32Array). Still hand-rolled
+// because Atlas M0 has no Vector Search — we rank candidate chunks in JS.
 function cosineSim(a, b) {
   let dot = 0;
   let na = 0;
@@ -55,4 +52,4 @@ function cosineSim(a, b) {
   return denom === 0 ? 0 : dot / denom;
 }
 
-module.exports = { embedOne, embedMany, cosineSim, vectorToBuffer, bufferToVector };
+module.exports = { getEmbeddings, cosineSim };
