@@ -32,6 +32,15 @@ router.post(
       result = await runAgent({ message, history, user: req.user });
     } catch (err) {
       console.error('agent run failed:', err);
+      const status = err?.status || err?.response?.status;
+      const msg = err?.message || '';
+      if (status === 429 || /quota|exceeded|rate.?limit/i.test(msg)) {
+        // The agent uses several Gemini calls per turn, so it hits the free-tier
+        // daily quota faster than plain chat. Tell the user the real reason.
+        throw new InputError(
+          'Gemini quota is exhausted for now — the agent makes several calls per turn on the free tier. Try again later, switch off Agent mode for a lighter single-call reply, or set a higher-quota GEMINI_MODEL.'
+        );
+      }
       throw new InputError('The agent failed to produce a response. Please try again in a moment.');
     }
 

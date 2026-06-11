@@ -27,16 +27,45 @@ const config = require('../config');
 
 const MAX_ATTEMPTS = 2;
 
-function chatModel(temperature, { json = false } = {}) {
-  return new ChatGoogleGenerativeAI({
-    apiKey: config.geminiApiKey,
-    model: config.geminiModel,
-    temperature,
-    maxRetries: 2, // ride out transient 429/503s
-    // json: true makes Gemini return pure JSON (no ```json fences), so the
-    // critique self-check parses reliably.
-    json,
-  });
+// Mirror the chat route's model-fallback chain. The agent makes 2-3 generate
+// calls per turn against a small free-tier daily quota (per model), so when the
+// primary model is exhausted/overloaded we fall through to the others — each
+// has its own quota — instead of failing the whole turn.
+const FALLBACK_MODELS = [config.geminiModel, 'gemini-2.0-flash', 'gemini-flash-latest'].filter(
+  (m, i, arr) => m && arr.indexOf(m) === i
+);
+
+function isRetryableModelError(err) {
+  const status = err?.status || err?.response?.status;
+  const msg = err?.message || '';
+  return (
+    status === 429 ||
+    status === 503 ||
+    /quota|exceeded|rate.?limit|overloaded|high demand|UNAVAILABLE/i.test(msg)
+  );
+}
+
+// json: true makes Gemini return pure JSON (no ```json fences) for the critique.
+async function invokeModel(messages, { temperature = 0.4, json = false } = {}) {
+  let lastErr;
+  for (const model of FALLBACK_MODELS) {
+    try {
+      const m = new ChatGoogleGenerativeAI({
+        apiKey: config.geminiApiKey,
+        model,
+        temperature,
+        json,
+        maxRetries: 1,
+      });
+      return await m.invoke(messages);
+    } catch (err) {
+      lastErr = err;
+      // Only a quota/overload error is worth trying the next model for; a real
+      // error (bad request, auth) would fail on every model too.
+      if (!isRetryableModelError(err)) throw err;
+    }
+  }
+  throw lastErr || new Error('All Gemini models failed');
 }
 
 function asText(content) {
@@ -134,7 +163,7 @@ async function generate(state) {
     messages.push(new HumanMessage(state.message));
   }
 
-  const res = await chatModel(0.4).invoke(messages);
+  const res = await invokeModel(messages, { temperature: 0.4 });
   return {
     draft: asText(res.content),
     attempts: state.attempts + 1,
@@ -161,7 +190,7 @@ DRAFT:
 ${state.draft}`;
 
   try {
-    const res = await chatModel(0, { json: true }).invoke([new HumanMessage(checkPrompt)]);
+    const res = await invokeModel([new HumanMessage(checkPrompt)], { temperature: 0, json: true });
     const raw = asText(res.content);
     // JSON mode returns clean JSON; the regex is a belt-and-braces fallback.
     const match = raw.match(/\{[\s\S]*\}/);
