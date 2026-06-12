@@ -309,7 +309,7 @@ const Page = () => {
     const isEmpty = messages.length === 0;
 
     return (
-        <div className="h-screen overflow-hidden bg-slate-50 text-slate-950">
+        <div className="flex h-screen flex-col overflow-hidden bg-slate-50 text-slate-950">
             <MobileTopBar
                 onOpenMenu={() => setMobileNavOpen(true)}
                 displayName={displayName}
@@ -324,7 +324,7 @@ const Page = () => {
                 onLogout={handleLogout}
             />
 
-            <div className="mx-auto flex h-full max-w-[1600px] flex-col lg:flex-row">
+            <div className="flex min-h-0 flex-1 flex-col lg:flex-row">
                 {/* Sidebar — history */}
                 <aside className="hidden h-full w-[280px] shrink-0 flex-col overflow-hidden border-r border-slate-200 bg-white px-4 py-5 lg:flex">
                     <Link href="/" className="inline-flex items-center gap-2.5 px-2">

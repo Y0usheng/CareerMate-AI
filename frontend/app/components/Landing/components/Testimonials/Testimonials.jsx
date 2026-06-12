@@ -16,13 +16,13 @@ const Testimonials = () => (
                         key={testimonial.name}
                         className="grid overflow-hidden rounded-[2rem] border border-slate-200 bg-white shadow-sm transition hover:-translate-y-1 hover:shadow-[0_24px_48px_rgba(15,23,42,0.08)] md:grid-cols-[0.9fr_1.2fr]"
                     >
-                        <div className="relative flex items-center justify-center bg-slate-50 md:h-auto md:min-h-72">
+                        <div className="relative flex items-center justify-center bg-slate-50 md:h-auto md:min-h-80">
                             <Image
                                 src={testimonial.image}
                                 alt={testimonial.name}
                                 width={800}
                                 height={1000}
-                                className="h-auto max-h-80 w-auto object-contain md:absolute md:inset-0 md:max-h-none md:h-full md:w-full md:object-cover"
+                                className="h-auto max-h-80 w-auto object-contain md:absolute md:inset-0 md:max-h-none md:h-full md:w-full md:object-contain"
                             />
                         </div>
                         <div className="flex flex-col justify-center p-6 sm:p-8">
