@@ -27,7 +27,7 @@ const Problem = () => (
                     ))}
                 </div>
 
-                <div className="relative overflow-hidden rounded-[2rem] bg-[linear-gradient(135deg,#4F8CFF_0%,#2AB5F6_100%)] p-6 pb-32 text-white sm:p-10 sm:pb-32 lg:pb-10">
+                <div className="relative min-h-[22rem] overflow-hidden rounded-[2rem] bg-[linear-gradient(135deg,#4F8CFF_0%,#2AB5F6_100%)] p-6 pb-32 text-white sm:min-h-[26rem] sm:p-10 sm:pb-32 lg:pb-10">
                     <div className="relative z-10 max-w-sm">
                         <h3 className="text-3xl font-bold leading-tight">
                             CareerMate AI helps you fix all of that, smartly.

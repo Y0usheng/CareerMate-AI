@@ -14,7 +14,7 @@ const Testimonials = () => (
                 {testimonials.map((testimonial) => (
                     <article
                         key={testimonial.name}
-                        className="grid overflow-hidden rounded-[2rem] border border-slate-200 bg-white shadow-sm transition hover:-translate-y-1 hover:shadow-[0_24px_48px_rgba(15,23,42,0.08)] md:grid-cols-[0.9fr_1.2fr]"
+                        className="grid overflow-hidden rounded-[2rem] border border-slate-200 bg-white shadow-sm transition hover:-translate-y-1 hover:shadow-[0_24px_48px_rgba(15,23,42,0.08)] md:grid-cols-[16rem_1fr]"
                     >
                         <div className="relative flex items-center justify-center bg-slate-50 md:h-auto md:min-h-80">
                             <Image
